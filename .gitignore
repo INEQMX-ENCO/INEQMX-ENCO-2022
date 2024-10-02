@@ -1,6 +1,8 @@
-# Data
-!data/
-!data/**/
+# Do not ignore subdirectories (but still ignore files inside them)
+!data/*/
+
+# Ignore all files within the subdirectories
+data/**/*
 
 # Mac OS-specific storage files
 .DS_Store
