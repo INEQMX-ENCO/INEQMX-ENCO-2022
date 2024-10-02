@@ -1,6 +1,3 @@
-# Ignore everything inside the data directory
-data/*
-
 # Do not ignore subdirectories (but still ignore files inside them)
 !data/*/
 
