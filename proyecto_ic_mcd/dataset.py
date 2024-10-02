@@ -12,9 +12,9 @@ url_enigh = "https://www.inegi.org.mx/contenidos/programas/enigh/nc/2022/datosab
 
 
 # Definir la ruta base para guardar los datos en raw
-raw_data_path_enco = os.path.join("..", "data", "raw", "enco")
+raw_data_path_enco = os.path.abspath(os.path.join("..", "proyecto_ic_gini_repo", "data", "raw", "enco"))
+raw_data_path_enigh = os.path.abspath(os.path.join("..", "proyecto_ic_gini_repo", "data", "raw", "enigh"))
 os.makedirs(raw_data_path_enco, exist_ok=True)
-raw_data_path_enigh = os.path.join("..", "data", "raw", "enigh")
 os.makedirs(raw_data_path_enigh, exist_ok=True)
 
 def descargar_y_extraer_zip(url, extract_path):
@@ -46,3 +46,4 @@ def descargar_datos():
 
 if __name__ == "__main__":
     descargar_datos()
+   
