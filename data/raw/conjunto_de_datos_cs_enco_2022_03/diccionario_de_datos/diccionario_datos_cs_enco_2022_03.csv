@@ -1,0 +1,31 @@
+NOMBRE_CAMPO,LONGITUD,TIPO,NEMÓNICO,CATÁLOGO,RANGO_CLAVES   
+Periodo,4,C,per,,0322
+Número de entrevista o visita,1,C,n_ent,n_ent,[1-8]
+Folio,6,C,fol,,000001-999999
+Entidad,2,C,ent,ent,01-32
+Control,5,C,con,,00001-99999
+Vivienda seleccionada,1,C,v_sel,v_sel,[1-4]
+Número de hogar,1,C,n_hog,n_hog,1
+Hogar mudado,1,C,h_mud,h_mud,0-4
+Número de renglón,2,C,n_ren,n_ren,[01-30]
+Pregunta 5 Nombre,50,C,nom,,
+Pregunta 6 Condición de residencia,1,C,c_res,c_res,[1-3]
+Pregunta 7 Clave de parentesco,1,C,par,par,[1-9]
+Pregunta 8 Sexo,1,C,sex,sex,"1,2"
+Pregunta 9 Edad,2,C,eda,eda,00-99
+Pregunta 10 Fecha de nacimiento,2,C,f_nac,,"D:01-31,99/M:01-12,99/A:1900-2020,9999"
+Pregunta 11 Alfabetismo,1,C,alf,alf,"1-2,9"
+Pregunta 12 ¿Hasta qué nivel aprobó... en la escuela?,2,C,i_niv,i_niv,"00-09,99"
+Pregunta 12 ¿Hasta qué año aprobó... en la escuela?,1,C,i_anio,i_anio,0-9
+Pregunta 13 Asistencia escolar,1,C,a_esc,a_esc,"1-2,9"
+Pregunta 14 Estado conyugal,1,C,e_con,e_con,"1-6,9"
+Pregunta 15 Condición de actividad,2,C,c_act,c_act,"01-10,99"
+Pregunta 16 Ocupación,1,C,ocu,ocu,"1-7,9"
+Pregunta 17 Actividad económica,1,C,a_eco,a_eco,"1-7,9"
+Pregunta 18 Posicion en la ocupación,1,C,pos,pos,"1-6,9"
+Pregunta 19 Periodo del Ingreso,1,C,i_per,i_per,[1-5]
+Pregunta 20 Ingreso,6,C,ing,,000001-999999
+Unidad primaria de muestreo,7,C,upm,,0000001-9999999
+Elegido del hogar,1,C,elegido,elegido,0-1
+Factor de expansión,10,N,factor,,1-999999
+Factor de expansión para personas de 18 años y más,10,N,fac_p18,,1-999999
