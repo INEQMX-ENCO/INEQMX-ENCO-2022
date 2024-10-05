@@ -52,7 +52,7 @@ def guardar_datos_en_csv(datos, archivo_salida):
 if __name__ == "__main__":
     # Claves de los estados con dos dígitos
     estados = [f"{i:02d}00" for i in range(1, 33)]  # Genera claves de 01 a 32
-    token = "edce8687-3d68-e6bf-34f5-230a03db8167"
+    token = "TU TOKEN AQUI"
     archivo_salida = os.path.join("data", "raw", "enigh", "api", "enigh_api.csv")
     
     os.makedirs(os.path.dirname(archivo_salida), exist_ok=True)
