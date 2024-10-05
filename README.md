@@ -4,7 +4,20 @@
     <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
 </a>
 
-A short description of the project.
+## Aseguramiento de la Calidad
+
+Este proyecto incluye un proceso de validación de datos durante el procesamiento, para garantizar que los datos sean consistentes y correctos.
+
+### Validaciones Implementadas:
+1. Verificación de valores nulos.
+2. Comprobación de los tipos de datos esperados.
+3. Detección de registros duplicados en las claves primarias.
+4. Validación de que los valores del ingreso no sean negativos.
+5. Verificación de formato correcto en las fechas.
+
+Para ejecutar el procesamiento y aseguramiento de la calidad, utiliza el siguiente comando:
+
+```python proyecto_ic_mcd/transform.py```
 
 ## Project Organization
 
