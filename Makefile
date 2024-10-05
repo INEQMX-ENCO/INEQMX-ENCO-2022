@@ -2,7 +2,7 @@
 # GLOBALS                                                                       #
 #################################################################################
 
-PROJECT_NAME = proyecto_ic_gini_repo
+PROJECT_NAME = INEQMX-ENCO-2022
 PYTHON_VERSION = 3.12
 PYTHON_INTERPRETER = python
 
