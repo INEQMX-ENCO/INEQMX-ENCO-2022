@@ -135,15 +135,29 @@ for i in range(1, 10):
 # Asignar el decil 10 a los que aún tengan 0
 BD1.loc[BD1['DECIL'] == 0, 'DECIL'] = 10
 
-# A esta altura, ya tienes la columna 'DECIL' dentro del DataFrame BD1, 
-# que categoriza cada hogar según su ingreso en uno de los 10 deciles.
-
-# Ahora puedes agregar esta columna a tu DataFrame original "Conc" 
-# si deseas tener la columna 'DECIL' en el df principal.
 Conc['DECIL'] = BD1['DECIL'].values  # Copiar la columna DECIL de BD1 a Conc
 
 # Ahora, en el DataFrame Conc tendrás una nueva columna 'DECIL' 
 # que categoriza cada hogar de acuerdo a su decil de ingreso.
 conc_decils = Conc[['folioviv', 'foliohog', 'ing_cor', 'DECIL']]
-print(conc_decils.head(-5))
-print(conc_decils.info)
+
+# Crear una función que extrae las partes del identificador de la vivienda (folioviv)
+def descomponer_folioviv(folio):
+    folio_str = str(folio).zfill(10)  # Asegurarse de que tenga 10 dígitos, rellenando con ceros si es necesario
+    entidad = folio_str[:2]  # Los primeros dos dígitos son la clave de la entidad federativa
+    ambito = folio_str[2]  # El tercer dígito es el ámbito (urbano o rural)
+    upm = folio_str[3:7]  # Los siguientes 4 dígitos son el número consecutivo de la UPM
+    decena = folio_str[7]  # El octavo dígito es la decena de levantamiento
+    num_control = folio_str[8:]  # Los últimos dos dígitos son el número de control
+    
+    return entidad, ambito, upm, decena, num_control
+
+# Aplicar la función a la columna folioviv del DataFrame y crear nuevas columnas
+conc_decils[['entidad', 'ambito', 'upm', 'decena', 'num_control']] = conc_decils['folioviv'].apply(descomponer_folioviv).apply(pd.Series)
+
+# Verificar las nuevas columnas
+print(conc_decils[['folioviv', 'entidad', 'ambito', 'upm', 'decena', 'num_control']].head())
+
+print(conc_decils['upm'].tail(-10))
+
+
