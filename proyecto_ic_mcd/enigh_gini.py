@@ -2,92 +2,74 @@
 import pandas as pd
 import numpy as np
 from scipy.stats import rankdata
-from inequality.gini import Gini
 from pathlib import Path
+import os
 
-relative_path = Path(r"data\raw\enigh\conjunto_de_datos_concentradohogar_enigh2022_ns\conjunto_de_datos\conjunto_de_datos_concentradohogar_enigh2022_ns.csv")
+# Función para cargar datos desde un archivo CSV
+def cargar_datos(ruta_csv):
+    """Carga los datos desde el archivo CSV y selecciona las variables necesarias."""
+    try:
+        df = pd.read_csv(ruta_csv)
+        df = df[['folioviv', 'foliohog', 'ing_cor', 'ingtrab', 'trabajo', 'negocio',
+                 'otros_trab', 'rentas', 'utilidad', 'arrenda', 'transfer', 'jubilacion',
+                 'becas', 'donativos', 'remesas', 'bene_gob', 'transf_hog', 'trans_inst',
+                 'estim_alqu', 'otros_ing', 'factor', 'upm', 'est_dis', 'ubica_geo']]
+        return df
+    except FileNotFoundError:
+        print(f"El archivo en la ruta {ruta_csv} no se encontró.")
+        return None
+    except Exception as e:
+        print(f"Ocurrió un error al cargar los datos: {e}")
+        return None
 
-# Get the absolute path to the CSV file
-# This assumes your script is running from the 'proyecto_ic_gini_repo' directory
-csv_path = relative_path.resolve()
+def agregar_entidad(df):
+    """
+    Agrega las columnas 'estado' y 'municipio' basadas en la variable 'ubica_geo'.
+    'ubica_geo' contiene los dos primeros dígitos para la entidad federativa y
+    los siguientes tres dígitos para el municipio, según el catálogo del INEGI.
+    """
+    # Extraer los primeros 2 dígitos como clave de entidad
+    df['estado'] = df['ubica_geo'].astype(str).str[:2]
+    
+    # Extraer los siguientes 3 dígitos como clave de municipio
+    df['municipio'] = df['ubica_geo'].astype(str).str[2:5]
+    
+    return df
 
-# Cargar los datos desde el archivo CSV
-Conc = pd.read_csv(csv_path)
+# Función para calcular deciles
+def calcular_deciles(df):
+    """Calcula los deciles de ingreso basado en el ingreso corriente."""
+    df['Nhog'] = 1
+    df = df.sort_values(by=['ing_cor', 'folioviv', 'foliohog'])
+    tot_hogares = df['factor'].sum()
+    tam_dec = np.trunc(tot_hogares / 10).astype(int)
 
-# Selección de las variables de interés
-Conc = Conc[['folioviv', 'foliohog', 'ing_cor', 'ingtrab', 'trabajo', 'negocio',
-             'otros_trab', 'rentas', 'utilidad', 'arrenda', 'transfer', 'jubilacion',
-             'becas', 'donativos', 'remesas', 'bene_gob', 'transf_hog', 'trans_inst',
-             'estim_alqu', 'otros_ing', 'factor', 'upm', 'est_dis']]
+    # Crear una copia para los cálculos
+    BD1 = df.copy()
+    BD1['MAXT'] = BD1['ing_cor']
+    BD1 = BD1.sort_values(by='MAXT')
+    BD1['ACUMULA'] = BD1['factor'].cumsum()
 
+    # Crear deciles
+    for i in range(1, 10):
+        a1 = BD1.loc[BD1[BD1['ACUMULA'] < tam_dec * i].index[-1], 'factor']
+        b1 = tam_dec * i - BD1.loc[BD1[BD1['ACUMULA'] < tam_dec * i].index[-1], 'ACUMULA']
+        BD1.loc[BD1[BD1['ACUMULA'] < tam_dec * i].index[-1] + 1, 'factor'] = b1
+        BD1.loc[BD1[BD1['ACUMULA'] < tam_dec * i].index[-1] + 2, 'factor'] = a1 - b1
 
-# Crear una variable para agregar la entidad federativa tomando los dos primeros dígitos de folioviv
-Conc['entidad'] = Conc['folioviv'].astype(str).str[:2]
+    # Recalcular acumulado
+    BD1['ACUMULA2'] = BD1['factor'].cumsum()
+    BD1['DECIL'] = 0
+    BD1.loc[BD1['ACUMULA2'] <= tam_dec, 'DECIL'] = 1
 
-# Definir la columna con los nombres de los deciles
-Numdec = ["Total", "I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"]
+    for i in range(1, 10):
+        BD1.loc[(BD1['ACUMULA2'] > tam_dec * i) & (BD1['ACUMULA2'] <= tam_dec * (i + 1)), 'DECIL'] = i + 1
 
-# Crear una bandera para numerar a los hogares
-Conc['Nhog'] = 1
+    BD1.loc[BD1['DECIL'] == 0, 'DECIL'] = 10
+    df['DECIL'] = BD1['DECIL'].values
+    return df
 
-# Ordenar los datos según ing_cor, folioviv, foliohog
-Conc = Conc.sort_values(by=['ing_cor', 'folioviv', 'foliohog'])
-
-# Calcular el total de hogares sumando la columna 'factor'
-tot_hogares = Conc['factor'].sum()
-
-# Dividir el total de hogares entre 10 para determinar el tamaño de los deciles
-tam_dec = np.trunc(tot_hogares / 10).astype(int)
-
-# Guardar el tamaño del decil en una nueva columna
-Conc['tam_dec'] = tam_dec
-
-# Crear una copia de la tabla Conc para la creación de los deciles
-BD1 = Conc.copy()
-
-# Crear la variable MAXT con los valores de 'ing_cor'
-BD1['MAXT'] = BD1['ing_cor']
-
-# Ordenar por la variable MAXT
-BD1 = BD1.sort_values(by='MAXT')
-
-# Aplicar la suma acumulada sobre la columna 'factor'
-BD1['ACUMULA'] = BD1['factor'].cumsum()
-
-# Crear deciles de ingreso
-for i in range(1, 10):
-    a1 = BD1.loc[BD1[BD1['ACUMULA'] < tam_dec * i].index[-1], 'factor']
-    b1 = tam_dec * i - BD1.loc[BD1[BD1['ACUMULA'] < tam_dec * i].index[-1], 'ACUMULA']
-    BD1.loc[BD1[BD1['ACUMULA'] < tam_dec * i].index[-1] + 1, 'factor'] = b1
-    BD1.loc[BD1[BD1['ACUMULA'] < tam_dec * i].index[-1] + 2, 'factor'] = a1 - b1
-
-# Nueva suma acumulada después de la división de los factores
-BD1['ACUMULA2'] = BD1['factor'].cumsum()
-
-# Inicializar la columna de Decil
-BD1['DECIL'] = 0
-
-# Asignar deciles
-BD1.loc[BD1['ACUMULA2'] <= tam_dec, 'DECIL'] = 1
-for i in range(1, 10):
-    BD1.loc[(BD1['ACUMULA2'] > tam_dec * i) & (BD1['ACUMULA2'] <= tam_dec * (i + 1)), 'DECIL'] = i + 1
-
-# Asignar el decil 10 a los que aún tengan 0
-BD1.loc[BD1['DECIL'] == 0, 'DECIL'] = 10
-
-# Calcular el total de hogares por decil
-x = BD1.groupby('Nhog')['factor'].sum()
-y = BD1.groupby('DECIL')['factor'].sum()
-
-# Calcular el promedio de ingreso corriente total y por decil
-ing_cormed_t = (BD1['factor'] * BD1['ing_cor']).groupby(BD1['Nhog']).sum() / x
-ing_cormed_d = (BD1['factor'] * BD1['ing_cor']).groupby(BD1['DECIL']).sum() / y
-
-# Guardar los resultados en un DataFrame
-prom_rub = pd.DataFrame({"INGRESO CORRIENTE": np.concatenate(([ing_cormed_t.mean()], ing_cormed_d))})
-prom_rub.index = Numdec
-
-# Cálculo del GINI
+# Función para calcular el coeficiente de Gini
 def gini(array, weights=None):
     """Calcula el coeficiente de Gini."""
     array = np.asarray(array)
@@ -99,65 +81,86 @@ def gini(array, weights=None):
     sorted_indices = np.argsort(array)
     sorted_array = array[sorted_indices]
     sorted_weights = weights[sorted_indices]
-    
+
     # Sumas acumuladas
     cum_weights = np.cumsum(sorted_weights)
     cum_income = np.cumsum(sorted_array * sorted_weights)
 
-    # Normalizar para que vayan de 0 a 1
+    # Normalizar
     cum_weights_norm = cum_weights / cum_weights[-1]
     cum_income_norm = cum_income / cum_income[-1]
 
-    # Cálculo del área bajo la curva Lorenz
-    B = np.trapz(cum_income_norm, cum_weights_norm)  # Área bajo la curva
+    # Área bajo la curva Lorenz
+    B = np.trapz(cum_income_norm, cum_weights_norm)
     return 1 - 2 * B
 
-# Cálculo del Gini nacional usando ingreso corriente
-deciles_hog_ingcor = pd.DataFrame({
-    "hogaresxdecil": y,
-    "ingreso": ing_cormed_d
-})
-
-gini_nacional = gini(deciles_hog_ingcor['ingreso'].values, deciles_hog_ingcor['hogaresxdecil'].values)
-
-# Mostrar resultados
-print("Promedio de ingreso corriente por decil:")
-print(round(prom_rub))
-print("\nCoeficiente de Gini:")
-print(round(gini_nacional, 3))
-
-
-# Asignar deciles
-BD1.loc[BD1['ACUMULA2'] <= tam_dec, 'DECIL'] = 1
-for i in range(1, 10):
-    BD1.loc[(BD1['ACUMULA2'] > tam_dec * i) & (BD1['ACUMULA2'] <= tam_dec * (i + 1)), 'DECIL'] = i + 1
-
-# Asignar el decil 10 a los que aún tengan 0
-BD1.loc[BD1['DECIL'] == 0, 'DECIL'] = 10
-
-Conc['DECIL'] = BD1['DECIL'].values  # Copiar la columna DECIL de BD1 a Conc
-
-# Ahora, en el DataFrame Conc tendrás una nueva columna 'DECIL' 
-# que categoriza cada hogar de acuerdo a su decil de ingreso.
-conc_decils = Conc[['folioviv', 'foliohog', 'ing_cor', 'DECIL']]
-
-# Crear una función que extrae las partes del identificador de la vivienda (folioviv)
+# Función para descomponer la variable folioviv
 def descomponer_folioviv(folio):
-    folio_str = str(folio).zfill(10)  # Asegurarse de que tenga 10 dígitos, rellenando con ceros si es necesario
-    entidad = folio_str[:2]  # Los primeros dos dígitos son la clave de la entidad federativa
-    ambito = folio_str[2]  # El tercer dígito es el ámbito (urbano o rural)
-    upm = folio_str[3:7]  # Los siguientes 4 dígitos son el número consecutivo de la UPM
-    decena = folio_str[7]  # El octavo dígito es la decena de levantamiento
-    num_control = folio_str[8:]  # Los últimos dos dígitos son el número de control
-    
+    """Descompone 'folioviv' en sus componentes: entidad, ámbito, UPM, decena y número de control."""
+    folio_str = str(folio).zfill(10)
+    entidad = folio_str[:2]
+    ambito = folio_str[2]
+    upm = folio_str[3:7]
+    decena = folio_str[7]
+    num_control = folio_str[8:]
     return entidad, ambito, upm, decena, num_control
 
-# Aplicar la función a la columna folioviv del DataFrame y crear nuevas columnas
-conc_decils[['entidad', 'ambito', 'upm', 'decena', 'num_control']] = conc_decils['folioviv'].apply(descomponer_folioviv).apply(pd.Series)
+# Función para guardar el DataFrame en un archivo CSV
+def guardar_datos(df, output_path):
+    """Guarda el DataFrame en un archivo CSV en la ruta especificada."""
+    # Crear el directorio si no existe
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    
+    # Guardar el archivo CSV
+    try:
+        df.to_csv(output_path, index=False)
+        print(f"Datos guardados exitosamente en {output_path}")
+    except Exception as e:
+        print(f"Ocurrió un error al guardar el archivo: {e}")
 
-# Verificar las nuevas columnas
-print(conc_decils[['folioviv', 'entidad', 'ambito', 'upm', 'decena', 'num_control']].head())
+# Función principal
+def main():
+    # Ruta relativa al archivo CSV
+    relative_path = Path(r"data/raw/enigh/conjunto_de_datos_concentradohogar_enigh2022_ns/conjunto_de_datos/conjunto_de_datos_concentradohogar_enigh2022_ns.csv")
+    
+    # Obtener la ruta absoluta
+    csv_path = relative_path.resolve()
 
-print(conc_decils['upm'].tail(-10))
+    # Cargar los datos
+    datos = cargar_datos(csv_path)
+    if datos is None:
+        return
+    
+    # Agregar entidad federativa
+    datos = agregar_entidad(datos)
 
+    # Calcular deciles de ingreso
+    datos = calcular_deciles(datos)
 
+    # Calcular el coeficiente de Gini
+    deciles_hog_ingcor = datos.groupby('DECIL').agg({
+        'factor': 'sum',
+        'ing_cor': lambda x: (x * datos['factor']).sum() / datos['factor'].sum()
+    })
+
+    gini_nacional = gini(deciles_hog_ingcor['ing_cor'].values, deciles_hog_ingcor['factor'].values)
+
+    # Mostrar resultados
+    print("\nCoeficiente de Gini Nacional:", round(gini_nacional, 3))
+
+    # Descomponer 'folioviv' en nuevas columnas
+    datos[['entidad', 'ambito', 'upm', 'decena', 'num_control']] = datos['folioviv'].apply(descomponer_folioviv).apply(pd.Series)
+
+    # Eliminar las columnas no deseadas
+    columnas_a_eliminar = ['ingtrab', 'trabajo', 'negocio', 'otros_trab', 'rentas', 'utilidad', 'arrenda', 
+                           'transfer', 'jubilacion', 'becas', 'donativos', 'remesas', 'bene_gob', 'transf_hog', 
+                           'trans_inst', 'estim_alqu', 'otros_ing']
+    datos = datos.drop(columns=columnas_a_eliminar)
+
+    # Guardar el DataFrame en la ruta especificada
+    interim_data_path = os.path.abspath(os.path.join("data", "interim", "enigh", "datos_procesados.csv"))
+    guardar_datos(datos, interim_data_path)
+
+# Ejecutar la función principal
+if __name__ == "__main__":
+    main()
