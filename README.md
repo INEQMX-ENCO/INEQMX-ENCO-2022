@@ -78,8 +78,8 @@ pip install -r requirements.txt
 
 The data used in this project comes from:
 
-[ENCO](https://www.inegi.org.mx/programas/enco/): National Consumer Confidence Survey by INEGI.
-[ENIGH 2022](https://www.inegi.org.mx/programas/enigh/nc/2022/): National Survey on Household Income and Expenditure by INEGI.
+- [ENCO](https://www.inegi.org.mx/programas/enco/): National Consumer Confidence Survey by INEGI.
+- [ENIGH 2022](https://www.inegi.org.mx/programas/enigh/nc/2022/): National Survey on Household Income and Expenditure by INEGI.
 
 
 ## Quality Assurance
@@ -106,5 +106,6 @@ This project is licensed under the MIT License. See the LICENSE file for details
 
 ## Acknowledgments
 Thanks to the team for their collaborative efforts in this project and to INEGI for providing the datasets used in our analysis.
+
 --------
 
