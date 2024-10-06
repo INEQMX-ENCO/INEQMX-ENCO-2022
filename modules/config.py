@@ -10,3 +10,7 @@ urls_enco = [f"{base_url_enco}conjunto_de_datos_enco_2022_{str(i).zfill(2)}_csv.
 
 # ENIGH dataset URL
 url_enigh = "https://www.inegi.org.mx/contenidos/programas/enigh/nc/2022/datosabiertos/conjunto_de_datos_enigh_ns_2022_csv.zip"
+processed_data_path_enigh = os.path.abspath(os.path.join("data", "interim", "enigh"))
+
+# Path for logs folder
+logs_folder = "logs"

@@ -17,7 +17,7 @@ sys.path.append(project_root)
 from modules.config import urls_enco, url_enigh, raw_data_path_enco, raw_data_path_enigh
 
 # Setup logging configuration
-logging.basicConfig(filename='logs/data_downloader.log', level=logging.INFO, 
+logging.basicConfig(filename=f"logs/data_downloader_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log", level=logging.INFO, 
                     format='%(asctime)s - %(levelname)s - %(message)s', filemode='w')
 
 # Function to clean the directory except for .gitkeep files
