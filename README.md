@@ -12,6 +12,20 @@ Using data from the ENCO 2022 and ENIGH 2022 surveys provided by INEGI, this ana
 
 This project not only aims to provide a clear view of the financial situation of households in Mexico but also to encourage critical reflection on how perceptions can distort reality and affect economic decisions.
 
+## Intended Audience
+
+The final data product is designed for a diverse audience, including:
+
+1. **Researchers and Academics**: Individuals and institutions interested in conducting studies related to income perception, economic behavior, and social disparities. The data can be used to explore the nuances of income perceptions versus actual earnings and expenditures.
+
+2. **Policymakers and Government Officials**: Decision-makers who require insights into the economic conditions and perceptions of citizens. This data can aid in formulating policies aimed at improving financial literacy and economic well-being.
+
+3. **Non-Governmental Organizations (NGOs)**: Organizations focused on social issues, poverty alleviation, and economic development. The data can help these organizations understand community needs and design effective programs.
+
+4. **Business Analysts and Market Researchers**: Professionals who analyze market trends and consumer behavior. The insights gained from this data can be invaluable for understanding the economic landscape and consumer confidence.
+
+5. **General Public**: Individuals interested in understanding their economic environment and comparing their perceptions of income and expenses with actual data. This can foster a deeper understanding of financial issues affecting their communities.
+
 ## Project Organization
 
 ```
