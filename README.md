@@ -1,23 +1,16 @@
-# ProyectO_IC_GINI
+# Perception vs. Reality of Household Income in Mexico
 
 <a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
     <img src="https://img.shields.io/badge/CCDS-Project%20template-328F97?logo=cookiecutter" />
 </a>
 
-## Aseguramiento de la Calidad
+## Description
 
-Este proyecto incluye un proceso de validación de datos durante el procesamiento, para garantizar que los datos sean consistentes y correctos.
+This project aims to analyze the discrepancy between individuals' perceptions of their income and what they actually earn and spend. Inspired by the concept of the "Doña Florinda syndrome," which reflects the tendency of some people to view their financial situation optimistically and, at times, excessively, we seek to investigate how this perception can influence the economic behavior of households.
 
-### Validaciones Implementadas:
-1. Verificación de valores nulos.
-2. Comprobación de los tipos de datos esperados.
-3. Detección de registros duplicados en las claves primarias.
-4. Validación de que los valores del ingreso no sean negativos.
-5. Verificación de formato correcto en las fechas.
+Using data from the ENCO 2022 and ENIGH 2022 surveys provided by INEGI, this analysis focuses on unraveling the differences between reported incomes and actual expenditures, as well as the social and economic consequences that arise from this misalignment. Through the calculation of the Gini coefficient, we will explore economic inequality and how it manifests across different population sectors, shedding light on the realities behind these perceptions.
 
-Para ejecutar el procesamiento y aseguramiento de la calidad, utiliza el siguiente comando:
-
-```python proyecto_ic_mcd/transform.py```
+This project not only aims to provide a clear view of the financial situation of households in Mexico but also to encourage critical reflection on how perceptions can distort reality and affect economic decisions.
 
 ## Project Organization
 
@@ -65,6 +58,53 @@ Para ejecutar el procesamiento y aseguramiento de la calidad, utiliza el siguien
     │
     └── plots.py                <- Code to create visualizations
 ```
+## Requirements
 
+To run this project, you need the following Python 3.12+ packages:
+
+- pandas
+- geopandas
+- numpy
+- requests
+- tqdm
+
+You can install the required packages using pip:
+
+```bash
+pip install -r requirements.txt
+```
+
+## Data Sources
+
+The data used in this project comes from:
+
+[ENCO](https://www.inegi.org.mx/programas/enco/): National Consumer Confidence Survey by INEGI.
+[ENIGH 2022](https://www.inegi.org.mx/programas/enigh/nc/2022/): National Survey on Household Income and Expenditure by INEGI.
+
+
+## Quality Assurance
+
+This project includes a data validation process during processing, to ensure that the data is consistent and correct.
+
+### Validations implemented:
+1. Verification of null values.
+2. Checking the expected data types.
+3. Detection of duplicate records in the primary keys.
+4. Validation that the income values are not negative.
+5. Verification of correct format on dates.
+
+To run processing and quality assurance, use the following command:
+```bash
+python modules/dataset_modules/data_transform_enco.py
+```
+
+## Contributing
+If you would like to contribute to this project, please fork the repository and submit a pull request with your changes
+
+## License
+This project is licensed under the MIT License. See the LICENSE file for details.
+
+## Acknowledgments
+Thanks to the team for their collaborative efforts in this project and to INEGI for providing the datasets used in our analysis.
 --------
 
