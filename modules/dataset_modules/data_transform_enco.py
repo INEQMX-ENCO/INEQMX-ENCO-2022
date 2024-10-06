@@ -1,127 +1,87 @@
 import os
-import sys
 import pandas as pd
-import logging
-from datetime import datetime
 
-# Add the project root directory to the Python path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
-sys.path.append(project_root)
+# Rutas de los archivos raw
+raw_data_path_enco = os.path.abspath(os.path.join("data", "raw", "enco"))
+interim_data_path = os.path.abspath(os.path.join("data", "interim", "enco"))
+os.makedirs(interim_data_path, exist_ok=True)
 
-# Import configurations (adjust paths if necessary)
-from modules.config import raw_data_path_enco, interim_data_path, logs_folder
+# Definir las columnas a seleccionar
+columnas_comunes = ['fol', 'ent', 'con', 'v_sel', 'n_hog', 'h_mud'] # Columnas comunes en cb,cs, viv y los datos de ENIGH
+viv_especificas = ['ageb', 'fch_def']
+cs_especificas = ['i_per', 'ing'] 
+cb_especificas = [f'p{i}' for i in range(1, 16)]  # Extraemos las preguntas del cuestionario básico
 
-# Ensure the logs directory exists
-os.makedirs(logs_folder, exist_ok=True)
+viv_cols = columnas_comunes + viv_especificas
+cs_cols = columnas_comunes + cs_especificas
+cb_cols = columnas_comunes + cb_especificas
 
-# Setup logging configuration
-log_filename = os.path.join(logs_folder, f"data_enco_transform_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
-logging.basicConfig(filename=log_filename, level=logging.INFO, 
-                    format='%(asctime)s - %(levelname)s - %(message)s', filemode='w')
+# Función para seleccionar columnas relevantes
+def seleccionar_columnas(df, columnas_relevantes):
+    return df[columnas_relevantes]
 
-# Columns to select
-COLUMNAS_COMUNES = ['fol', 'ent', 'con', 'v_sel', 'n_hog', 'h_mud']  # Common columns
-VIV_ESPECIFICAS = ['ageb', 'fch_def']
-CS_ESPECIFICAS = ['i_per', 'ing']
-CB_ESPECIFICAS = [f'p{i}' for i in range(1, 16)]
-
-VIV_COLS = COLUMNAS_COMUNES + VIV_ESPECIFICAS
-CS_COLS = COLUMNAS_COMUNES + CS_ESPECIFICAS
-CB_COLS = COLUMNAS_COMUNES + CB_ESPECIFICAS
-
+# Función para cargar datos
 def cargar_datos(mes, tipo):
-    """
-    Load ENCO data for a given month and type (cs, viv, cb).
-    """
     file_name = f'conjunto_de_datos_{tipo}_enco_2022_{str(mes).zfill(2)}.CSV'
-    folder_path = os.path.join(raw_data_path_enco, f'conjunto_de_datos_{tipo}_enco_2022_{str(mes).zfill(2)}', 'conjunto_de_datos')
+    folder_path = f'{raw_data_path_enco}/conjunto_de_datos_{tipo}_enco_2022_{str(mes).zfill(2)}/conjunto_de_datos'
     file_path = os.path.join(folder_path, file_name)
     
     if os.path.exists(file_path):
-        logging.info(f"Loading data from {file_path}")
         return pd.read_csv(file_path)
     else:
-        logging.error(f"File not found: {file_path}")
+        print(f"Archivo no encontrado: {file_name}")
         return pd.DataFrame()
-
-def validate_data(df):
-    # Validate the ENCO dataset to ensure it is tidy
+    
+# Aseguramiento de la calidad - validaciones de los datos
+def validar_datos(df):
+    # 1. Comprobar si hay valores nulos
     if df.isnull().values.any():
-        logging.warning("Missing values detected in the dataset.")
+        print("Advertencia: Existen valores nulos en el conjunto de datos.")
     
-    if 'ing' in df.columns and (df['ing'] < 0).any():
-        logging.error("Negative values detected in 'ing' column.")
-        return False
+    # 2. Validar que los tipos de datos sean correctos
+    tipos_esperados = {
+        'fol': str, 'ent': int, 'con': int, 'v_sel': int, 'n_hog': int, 'h_mud': int,
+        'ageb': str, 'fch_def': str, 'i_per': float, 'ing': float
+    }
     
-    if df.duplicated(subset=COLUMNAS_COMUNES).any():
-        logging.error("Duplicate records found based on key columns.")
-        return False
+    for columna, tipo in tipos_esperados.items():
+        if columna in df.columns:
+            if not df[columna].map(lambda x: isinstance(x, tipo)).all():
+                print(f"Advertencia: La columna {columna} tiene valores que no corresponden al tipo {tipo}.")
+    
+    # 3. Validar que no existan duplicados en las claves primarias (ejemplo: combinación de 'fol', 'ent', etc.)
+    if df.duplicated(subset=columnas_comunes).any():
+        print("Advertencia: Existen registros duplicados en las columnas de clave primaria.")
+    
+    # 4. Validar rangos o valores esperados en las columnas (por ejemplo, que el ingreso no sea negativo)
+    if (df['ing'] < 0).any():
+        print("Advertencia: Existen valores negativos en la columna 'ing'.")
 
-    return True
-
-def transform_enco_data(cs_df, viv_df, cb_df):
+    # 5. Validar que la fecha tiene un formato correcto
     try:
-        logging.info("Transforming ENCO data...")
+        pd.to_datetime(df['fch_def'], format='%Y-%m-%d')
+    except ValueError:
+        print("Advertencia: Existen fechas mal formateadas en la columna 'fch_def'.")    
 
-        # Merge datasets on common columns
-        merged_data = pd.merge(cs_df, viv_df, on=COLUMNAS_COMUNES, how='inner')
-        merged_data = pd.merge(merged_data, cb_df, on=COLUMNAS_COMUNES, how='inner')
-
-        # Add derived columns: extract 'ageb' as state and municipality codes
-        merged_data['entidad'] = merged_data['ageb'].str[:2]  # Entity code
-        merged_data['municipio'] = merged_data['ageb'].str[2:5]  # Municipality code
-
-        logging.info(f"Transformed data shape: {merged_data.shape}")
-        return merged_data
-    except KeyError as e:
-        logging.error(f"Error transforming data: {e}")
-        return None
-    except Exception as e:
-        logging.error(f"An unexpected error occurred: {e}")
-        return None
-
-def save_transformed_data(data, output_path):
-    try:
-        os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        data.to_csv(output_path, index=False)
-        logging.info(f"Saved transformed data to {output_path}")
-    except Exception as e:
-        logging.error(f"Error saving transformed data: {e}")
-
-def create_metadata(output_path, raw_data_path):
-    metadata_file = os.path.abspath(os.path.join("data", "metadata", "enco_transform_metadata.txt"))
-    with open(metadata_file, 'w') as f:
-        f.write("Metadata for ENCO Data Transformation\n")
-        f.write(f"Source: {raw_data_path}\n")
-        f.write(f"Transformation date: {datetime.now()}\n")
-        f.write(f"Tidy data saved at: {output_path}\n")
-        f.write(f"Selected columns: {', '.join(VIV_COLS + CS_COLS + CB_COLS)}\n")
-        logging.info(f"Metadata generated at {metadata_file}")
-
-def process_data():
+# Procesar y filtrar los DataFrames
+def procesar_datos():
     df_final = pd.DataFrame()
     for i in range(1, 13):
-        cs_df = cargar_datos(i, 'cs')
-        viv_df = cargar_datos(i, 'viv')
-        cb_df = cargar_datos(i, 'cb')
-
-        if cs_df.empty or viv_df.empty or cb_df.empty:
-            logging.warning(f"Skipping month {i} due to missing data.")
-            continue
-
-        # Select relevant columns
-        cs_df = cs_df[CS_COLS]
-        viv_df = viv_df[VIV_COLS]
-        cb_df = cb_df[CB_COLS]
-
-        # Validate and transform data
-        if validate_data(cs_df) and validate_data(viv_df) and validate_data(cb_df):
-            transformed_data = transform_enco_data(cs_df, viv_df, cb_df)
-            df_final = pd.concat([df_final, transformed_data], ignore_index=True)
-
-    output_file_path = os.path.join(interim_data_path, "enco_interim_tidy.csv")
-    save_transformed_data(df_final, output_file_path)
-    create_metadata(output_file_path, raw_data_path_enco)
+        cs_df = seleccionar_columnas(cargar_datos(i, 'cs'), cs_cols)
+        viv_df = seleccionar_columnas(cargar_datos(i, 'viv'), viv_cols)
+        cb_df = seleccionar_columnas(cargar_datos(i, 'cb'), cb_cols)
+        
+        if not cs_df.empty and not viv_df.empty and not cb_df.empty:
+            temp = pd.merge(cs_df, viv_df, on=columnas_comunes, how='inner')
+            temp = pd.merge(temp, cb_df, on=columnas_comunes, how='inner')
+            df_final = pd.concat([df_final, temp], ignore_index=True)
+    
+    # Aseguramiento de la calidad de los datos: Validar el DataFrame final
+    validar_datos(df_final)
+    
+    # Guardar el DataFrame tidy procesado
+    df_final.to_csv(os.path.join(interim_data_path, 'enco_interim_tidy.csv'), index=False)
+    print(f"Datos procesados y guardados en {interim_data_path}/enco_interim_tidy.csv")
 
 if __name__ == "__main__":
-    process_data()
+    procesar_datos()
