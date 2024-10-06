@@ -3,7 +3,7 @@ import pandas as pd
 
 # Rutas de los archivos raw
 raw_data_path_enco = os.path.abspath(os.path.join("data", "raw", "enco"))
-interim_data_path = os.path.abspath(os.path.join("data", "interim"))
+interim_data_path = os.path.abspath(os.path.join("data", "interim", "enco"))
 os.makedirs(interim_data_path, exist_ok=True)
 
 # Definir las columnas a seleccionar

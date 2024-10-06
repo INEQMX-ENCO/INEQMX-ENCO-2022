@@ -9,7 +9,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")
 sys.path.append(project_root)
 
 # Import configurations
-from modules.config import raw_data_path_enigh, processed_data_path_enigh, logs_folder
+from modules.config import raw_data_path_enigh, interim_data_path_enigh, logs_folder
 
 # Ensure the logs and metadata directories exist
 os.makedirs(logs_folder, exist_ok=True)
@@ -140,7 +140,7 @@ def generate_summary_statistics(data):
 
 if __name__ == "__main__":
     raw_file_path = os.path.join(raw_data_path_enigh, r"conjunto_de_datos_concentradohogar_enigh2022_ns\conjunto_de_datos\conjunto_de_datos_concentradohogar_enigh2022_ns.csv")  # Adjust based on actual raw file name
-    output_file_path = os.path.join(processed_data_path_enigh, "enigh_tidy_data.csv")
+    output_file_path = os.path.join(interim_data_path_enigh, "enigh_tidy_data.csv")
 
     # Load raw data
     raw_data = load_raw_enigh_data(raw_file_path)
