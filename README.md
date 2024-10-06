@@ -102,7 +102,7 @@ python modules/dataset_modules/data_transform_enco.py
 If you would like to contribute to this project, please fork the repository and submit a pull request with your changes
 
 ## License
-This project is licensed under the MIT License. See the LICENSE file for details.
+This project is licensed under the MIT License. See the [LICENSE](https://github.com/INEQMX-ENCO/INEQMX-ENCO-2022/blob/9666c9b5b0534d9a4b39b0fa83da141ad7de8b40/LICENSE) file for details.
 
 ## Acknowledgments
 Thanks to the team for their collaborative efforts in this project and to INEGI for providing the datasets used in our analysis.
