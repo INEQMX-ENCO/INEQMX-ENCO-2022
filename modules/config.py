@@ -13,5 +13,13 @@ url_enigh = "https://www.inegi.org.mx/contenidos/programas/enigh/nc/2022/datosab
 interim_data_path_enigh = os.path.abspath(os.path.join("data", "interim", "enigh"))
 interim_data_path = os.path.abspath(os.path.join("data", "interim", "enco"))
 
+# AGEB dataset URLs
+base_url_ageb = "https://www.inegi.org.mx/contenidos/programas/ccpv/iter/zip/resageburb20/"
+urls_ageb = [f"{base_url_ageb}resageburb_{str(i).zfill(2)}csv20.zip" for i in range(1, 33)]
+
+# SHP dataset URLs
+base_url_shp = "https://www.inegi.org.mx/contenidos/descargadenue/MGdescarga/MGN2020_1/"
+urls_shp = [f"{base_url_ageb_shp}2020_1_00_{str(i)}.zip" for i in ['ENT','MUN']]
+
 # Path for logs folder
 logs_folder = "logs"
