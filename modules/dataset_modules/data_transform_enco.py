@@ -8,7 +8,7 @@ os.makedirs(interim_data_path, exist_ok=True)
 
 # Definir las columnas a seleccionar
 columnas_comunes = ['fol', 'ent', 'con', 'v_sel', 'n_hog', 'h_mud'] # Columnas comunes en cb,cs, viv y los datos de ENIGH
-viv_especificas = ['ageb', 'fch_def']
+viv_especificas = ['mpio', 'ageb', 'fch_def']
 cs_especificas = ['i_per', 'ing'] 
 cb_especificas = [f'p{i}' for i in range(1, 16)]  # Extraemos las preguntas del cuestionario básico
 
