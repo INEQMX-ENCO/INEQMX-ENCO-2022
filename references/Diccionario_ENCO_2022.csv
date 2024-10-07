@@ -1,6 +1,6 @@
 NOMBRE_CAMPO,LONGITUD,TIPO,NEMÓNICO,RANGO_CLAVES,CATÁLOGO,CLAVE,DESCRIPCION
 Folio,6,C,fol,alfanumerico,,, 
-Entidad,2,C,ent,[01-32],ent,,
+Entidad,2,C,ent,[01-32],ent,, 
 Control,5,C,con,00001-99999,,, 
 Vivienda seleccionada,1,C,v_sel,[1-4],v_sel,1,Vivienda uno
 ,,,,,,2,Vivienda dos
@@ -18,7 +18,7 @@ Periodo del Ingreso,1,C,i_per,[1-5],i_per,1,Cada semana
 ,,,,,,4,Cada año
 ,,,,,,5,No recibe ingreso
 Ingreso mensual estimado,6,C,ing,000001-999999,,, 
-Número de municipio según entidad,3,C,mpio,001-575,mpio,,
+Número de municipio según entidad,3,C,mpio,001-575,mpio,, 
 Ageb,5,C,ageb,00000-99999,,, 
 Fecha resultado definitivo,10,C,fch_def,,, 
 Pregunta 1,1,C,p1,[1-6],p1,1,Mucho mejor
