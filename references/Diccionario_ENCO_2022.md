@@ -72,3 +72,34 @@ Este diccionario de datos describe las columnas del archivo CSV, incluyendo info
 |                            |              |          |              |                        |              | 4         | No sabe.                            |
 | Pregunta 9                 | 1            | C        | p9           | [1-3]                  | p9           | 1         | Sí.                                 |
 |                            |             
+| Pregunta 10                | 1            | C        | p10          | [1-4]                  | p10          | 1         | Sí.                                 |
+|                            |              |          |              |                        |              | 2         | No.                                 |
+|                            |              |          |              |                        |              | 3         | No sabe.                            |
+|                            |              |          |              |                        |              | 4         | No tiene ingresos.                  |
+| Pregunta 11                | 1            | C        | p11          | [1-6]                  | p11          | 1         | Muy buenas.                         |
+|                            |              |          |              |                        |              | 2         | Buenas.                             |
+|                            |              |          |              |                        |              | 3         | Iguales.                            |
+|                            |              |          |              |                        |              | 4         | Malas.                              |
+|                            |              |          |              |                        |              | 5         | Muy malas.                          |
+|                            |              |          |              |                        |              | 6         | No sabe.                            |
+| Pregunta 12                | 1            | C        | p12          | [1-7]                  | p12          | 1         | Disminuir mucho.                    |
+|                            |              |          |              |                        |              | 2         | Disminuir poco.                     |
+|                            |              |          |              |                        |              | 3         | Permanecer igual.                   |
+|                            |              |          |              |                        |              | 4         | Aumentar poco.                      |
+|                            |              |          |              |                        |              | 5         | Aumentar igual.                     |
+|                            |              |          |              |                        |              | 6         | Aumentar mucho.                     |
+|                            |              |          |              |                        |              | 7         | No sabe.                            |
+| Pregunta 13                | 1            | C        | p13          | [1-6]                  | p13          | 1         | Aumentar mucho.                     |
+|                            |              |          |              |                        |              | 2         | Aumentar poco.                      |
+|                            |              |          |              |                        |              | 3         | Permanecer igual.                   |
+|                            |              |          |              |                        |              | 4         | Disminuir poco.                     |
+|                            |              |          |              |                        |              | 5         | Disminuir mucho.                    |
+|                            |              |          |              |                        |              | 6         | No sabe.                            |
+| Pregunta 14                | 1            | C        | p14          | [1-4]                  | p14          | 1         | Sí.                                 |
+|                            |              |          |              |                        |              | 2         | Probablemente.                      |
+|                            |              |          |              |                        |              | 3         | No.                                 |
+|                            |              |          |              |                        |              | 4         | No sabe.                            |
+| Pregunta 15                | 1            | C        | p15          | [1-4]                  | p15          | 1         | Sí.                                 |
+|                            |              |          |              |                        |              | 2         | Probablemente.                      |
+|                            |              |          |              |                        |              | 3         | No.                                 |
+|                            |              |          |              |                        |              | 4         | No sabe.                            |
