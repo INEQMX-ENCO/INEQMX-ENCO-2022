@@ -29,49 +29,48 @@ The final data product is designed for a diverse audience, including:
 ## Project Organization
 
 ```
-├── LICENSE            <- Open-source license if one is chosen
-├── Makefile           <- Makefile with convenience commands like `make data` or `make train`
-├── README.md          <- The top-level README for developers using this project.
+├── LICENSE                  # Open-source license if one is chosen.
+├── Makefile                 # Convenience commands for building and running the project (e.g., `make data`, `make train`).
+├── README.md                # The top-level README file for developers using or contributing to this project.
+├── requirements.txt         # Python dependencies needed to run the project 
+│
 ├── data
-│   ├── external       <- Data from third party sources.
-│   ├── interim        <- Intermediate data that has been transformed.
-│   ├── processed      <- The final, canonical data sets for modeling.
-│   └── raw            <- The original, immutable data dump.
+│   ├── external            # Data from third-party sources.
+│   ├── interim             # Intermediate data that has been transformed.
+│   ├── metadata            # Additional data describing the datasets.
+│   ├── processed           # The final, canonical datasets for modeling.
+│   └── raw                 # The original, immutable data dump.
 │
-├── docs               <- A default mkdocs project; see www.mkdocs.org for details
+├── modules                         
+│   ├── dataset_modules      # Python scripts for downloading and transforming datasets.
+│   │   ├── data_downloader.py
+│   │   ├── data_transform_enco.py
+│   │   └── data_transform_engih.py
+│   ├── models               # Model-related scripts or information.
+│   └── config.py            # Configuration files for the documentation generation tool.                  <-
 │
-├── models             <- Trained and serialized models, model predictions, or model summaries
+├── notebooks                # Jupyter notebooks used for data exploration, model development, or reporting. Naming     │                              convention: `number-author-initials-description`.
 │
-├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering),
-│                         the creator's initials, and a short `-` delimited description, e.g.
-│                         `1.0-jqp-initial-data-exploration`.
+├── references               # Data dictionaries, manuals, and all other explanatory materials.
+│   ├── diccionario_enghi_2022.md
+│   └── diccionario_enco_2022.md
 │
-├── pyproject.toml     <- Project configuration file with package metadata for 
-│                         proyecto_ic_mcd and configuration for tools like black
+├── reports                  # This folder stores generated analysis in formats such as HTML, PDF, or LaTeX, along with │                              any figures created during the project.
+│   └── figures              # Generated graphics and figures for use in reporting.
 │
-├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-│
-├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-│   └── figures        <- Generated graphics and figures to be used in reporting
-│
-├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
-│                         generated with `pip freeze > requirements.txt`
-│
-├── setup.cfg          <- Configuration file for flake8
-│
-└── proyecto_ic_mcd   <- Source code for use in this project.
+└── IENQMX-ENCO-2022         # Source code for use in this project.
     │
-    ├── __init__.py             <- Makes proyecto_ic_mcd a Python module
-    │
-    ├── config.py               <- Store useful variables and configuration
-    │
-    ├── dataset.py              <- Scripts to download or generate data
-    │
-    ├── features.py             <- Code to create features for modeling
-    │
-    │
-    └── plots.py                <- Code to create visualizations
+    └── __init__.py          # Makes INEQMX-ENCO-2022 a Python module
 ```
+
+## Usage Instructions
+
+1. Clone the repository: `git clone https://github.com/INEQMX-ENCO/INEQMX-ENCO-2022`
+2. Install the dependencies: `pip install -r requirements.txt`
+3. Run the Makefile commands: `make data`, `make train`, etc.
+4. Explore the notebooks: `jupyter notebook`
+5. Check the reports and figures in the `reports/` directory.
+
 ## Requirements
 
 To run this project, you need the following Python 3.12+ packages:
