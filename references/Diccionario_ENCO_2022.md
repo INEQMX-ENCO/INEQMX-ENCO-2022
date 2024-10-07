@@ -1,4 +1,4 @@
-# Diccionario de Datos
+# ENCO Dicionario de Datos
 
 Este diccionario de datos describe las columnas del archivo CSV, incluyendo información sobre identificadores, ubicaciones geográficas, ingresos y respuestas a preguntas de encuesta.
 
