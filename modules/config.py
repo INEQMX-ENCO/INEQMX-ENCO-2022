@@ -3,6 +3,8 @@ import os
 # Paths for storing raw data
 raw_data_path_enco = os.path.abspath(os.path.join("data", "raw", "enco"))
 raw_data_path_enigh = os.path.abspath(os.path.join("data", "raw", "enigh"))
+raw_data_path_ageb = os.path.abspath(os.path.join("data", "raw", "ageb"))
+raw_data_path_shp = os.path.abspath(os.path.join("data", "raw", "shp"))
 
 # ENCO dataset URLs
 base_url_enco = "https://www.inegi.org.mx/contenidos/programas/enco/datosabiertos/2022/"
