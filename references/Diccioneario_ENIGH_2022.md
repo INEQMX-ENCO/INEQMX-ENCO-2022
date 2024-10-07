@@ -1,6 +1,6 @@
-# Data Dictionary
+# ENGIH Dicionario de Datos
 
-Este diccionario de datos describe cada columna en el **CONCENTRADOHOGAR**, que incluye información sobre ingresos del hogar, geografía y otras variables socioeconómicas.
+Este diccionario de datos describe cada columna en el **CONCENTRADOHOGAR** de la encuesta ENGIH, que incluye información sobre ingresos del hogar, geografía y otras variables socioeconómicas.
 
 | **Nombre de Columna** | **Descripción**                                                    | **Tipo** | **Detalles**                                                                                  |
 |-----------------------|--------------------------------------------------------------------|----------|----------------------------------------------------------------------------------------------|
