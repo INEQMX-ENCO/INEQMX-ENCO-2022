@@ -2,4 +2,6 @@
 
 Here is the interactive visualization of the ENCO data:
 
-[View Interactive Visualization](assets/interim_enco_profiling_report.html)
+[View YData Visualization](assets/interim_enco_profiling_report.html)
+
+[View SweetViz Visualization](assets/interim_enco_sweetviz_report.html)
