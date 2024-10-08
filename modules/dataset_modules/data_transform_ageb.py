@@ -62,24 +62,67 @@ def load_raw_ageb(file_path):
 
 def validate_data(data):
     """Validate the AGEB dataset to ensure it is tidy."""
-    # 1. Check if required columns are present
+    # Check if required columns are present
     missing_columns = [col for col in REQUIRED_COLUMNS if col not in data.columns]
     if missing_columns:
         logging.error(f"Missing columns: {missing_columns}")
         return False
+    # Function for 'ENTIDAD' row
+    def validate_row_ent(entidad):
+        """Clave de entidad federativa={column:ENTIDAD, type:str, range:[00,32], max_len:2}"""
+        if isinstance(entidad, str) and len(entidad) <= 2:
+            try:
+                # To int
+                val = int(entidad)
+                # Range [0-32]
+                return 0 <= val <= 32
+            except ValueError:
+                # If unable to change to int, return False
+                return False
+        return False  # False if not string or len>2
+    cond_ent=data['ENTIDAD'].apply(validate_row_ent).all() # Verify function for all column values
 
-    # 2. Check for missing values in key columns
-    if data[REQUIRED_COLUMNS].isnull().any().any():
-        logging.warning("Missing values detected in key columns.")
-        # Optional: Decide whether to drop or fill missing values
-        data = data.dropna(subset=REQUIRED_COLUMNS)
+    # Function for 'MUN' row
+    def validate_row_mun(municipio):
+        """Clave de municipio o demarcación territorial={column:MUN, type:str, range:[000,570], max_len:3}"""
+        if isinstance(municipio, str) and len(municipio) <= 3:
+            try:
+                # To int
+                val = int(municipio)
+                # Range [0-570]
+                return 0 <= val <= 570
+            except ValueError:
+                # If unable to change to int, return False
+                return False
+        return False  # False if not string or len>3
+    cond_mun=data['MUN'].apply(validate_row_mun).all() # Verify function for all column values
 
-    # 3. Check for negative values in total population
-    pop_columns = [col for col in REQUIRED_COLUMNS if "POBTOT" in col]
-    if (data["POBTOT"] < 0).any().any():
-        logging.error("Negative population values detected.")
-        return False
-    return True
+    # Function for 'NOM_MUN' row
+    def validate_row_nom_mun(nom_mun):
+        """Municipio o demarcación territorial={column:NOM_MUN, type:str(alnum/alphanumeric), range:alphanumeric, max_len:50}"""
+        if isinstance(nom_mun, str) and nom_mun.isalnum() and len(nom_mun) <= 50:
+            return True
+        return False  # False if not string, alphanumeric, or len>50
+    cond_nom_mun=data['NOM_MUN'].apply(validate_row_nom_mun).all() # Verify function for all column values
+
+    # Function for 'AGEB' row
+    def validate_row_ageb(ageb):
+        """Municipio o demarcación territorial={column:AGEB, type:str(alnum/alphanumeric), range:alphanumeric, max_len:50}"""
+        if isinstance(ageb, str) and ageb.isalnum() and len(ageb) <= 4:
+            return True
+        return False  # False if not string, alphanumeric, or len>50
+    cond_ageb=data['AGEB'].apply(validate_row_ageb).all() # Verify function for all column values
+
+    # Function for 'POBTOT' row
+    def validar_fila_pob_tot(valor):
+        """Población total={column:POBTOT, type:int, range:[0-999999999], max_len:9}"""
+        if isinstance(valor, int): # Check if int
+            return 0 <= valor <= 999999999 and len(str(valor)) <= 9 # Check range and max len
+        return False  # False is not an it
+    cond_pob_tot=data['POBTOT'].apply(validar_fila_pob_tot).all() # Verify function for all column values
+
+    Cumple=cond_ent and cond_mun and cond_nom_mun and cond_ageb and cond_pob_tot
+    return Cumple
 
 def transform_ageb_data(data):
     """Select necessary columns and create tidy dataset."""

@@ -43,14 +43,12 @@ def load_raw_shp(file_path):
             try:
                 if shp_file.endswith('ENT.shp'):
                     shp_ent=gpd.read_shp(file_path_full)
-                    logging.info(f"Loaded {shp_file} successfully, current shape: {shp_ent.shape}")
+                    logging.info(f"Loaded {shp_file} successfully, shape: {shp_ent.shape}")
                 else:
                     shp_mun=gpd.read_shp(file_path_full)
-                    logging.info(f"Loaded {shp_file} successfully, current shape: {shp_mun.shape}")
+                    logging.info(f"Loaded {shp_file} successfully, shape: {shp_mun.shape}")
             except Exception as e:
                 logging.error(f"Error loading {shp_file}: {e}")
-
-        logging.info(f"All SHP files loaded successfully. Final shape: {gdf_shp.shape}")
         return shp_ent, shp_mun
     except Exception as e:
         logging.error(f"Error loading data from {file_path}: {e}")
@@ -108,7 +106,7 @@ def validate_data(data):
     cond_geo = data['geometry'].apply(lambda x: isinstance(x, (Polygon, MultiPolygon)))
 
     # Condición 5: Verificamos si hay valores NaN y en qué columnas están
-    cond_nan = data.columns[gdf.isnull().any()].tolist()
+    cond_nan = data.columns[data.isnull().any()].tolist()
 
     # Verificamos si todas las filas cumplen con todas las condiciones
     cumple_todas_condiciones = (cond_cvegeo & cond_ent & cond_nom_geo & cond_geo).all() and len(cond_nan) == 0
