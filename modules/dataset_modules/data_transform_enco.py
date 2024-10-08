@@ -1,10 +1,28 @@
 import os
+import sys
 import pandas as pd
+from datetime import datetime
+import logging
+
+# Add the project root directory to the Python path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
+sys.path.append(project_root)
+
+# Import configurations
+from modules.config import logs_folder, interim_data_path_enco
 
 # Rutas de los archivos raw
 raw_data_path_enco = os.path.abspath(os.path.join("data", "raw", "enco"))
-interim_data_path = os.path.abspath(os.path.join("data", "interim", "enco"))
+interim_data_path = interim_data_path_enco
 os.makedirs(interim_data_path, exist_ok=True)
+
+# Ensure the logs and metadata directories exist
+os.makedirs(logs_folder, exist_ok=True)
+
+# Setup logging configuration
+log_filename = os.path.join(logs_folder, f"data_enco_transform_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+logging.basicConfig(filename=log_filename, level=logging.INFO, 
+                    format='%(asctime)s - %(levelname)s - %(message)s', filemode='w')
 
 # Definir las columnas a seleccionar
 columnas_comunes = ['fol', 'ent', 'con', 'v_sel', 'n_hog', 'h_mud'] # Columnas comunes en cb,cs, viv y los datos de ENIGH
@@ -63,6 +81,17 @@ def validar_datos(df):
     except ValueError:
         print("Advertencia: Existen fechas mal formateadas en la columna 'fch_def'.")    
 
+def create_metadata(output_path, raw_data_path, columnas_relevantes):
+    """Create metadata for the processed data."""
+    metadata_file = os.path.abspath(os.path.join("data", "metadata", "enco_transform_metadata.txt"))
+    with open(metadata_file, 'w') as f:
+        f.write("Metadata for ENIGH Data Transformation\n")
+        f.write(f"Source: {raw_data_path}\n")
+        f.write(f"Transformation date: {datetime.now()}\n")
+        f.write(f"Tidy data saved at: {output_path}\n")
+        f.write(f"Selected columns: {', '.join(columnas_relevantes)}\n")
+        logging.info(f"Metadata generated at {metadata_file}")
+
 # Procesar y filtrar los DataFrames
 def procesar_datos():
     df_final = pd.DataFrame()
@@ -78,7 +107,8 @@ def procesar_datos():
     
     # Aseguramiento de la calidad de los datos: Validar el DataFrame final
     validar_datos(df_final)
-    
+    output_file_path = os.path.join(interim_data_path_enco, "enigh_tidy_data.csv")
+    create_metadata(os.path.join(output_file_path, 'enco_interim_tidy.csv'), raw_data_path_enco, viv_cols + cs_cols + cb_cols)
     # Guardar el DataFrame tidy procesado
     df_final.to_csv(os.path.join(interim_data_path, 'enco_interim_tidy.csv'), index=False)
     print(f"Datos procesados y guardados en {interim_data_path}/enco_interim_tidy.csv")

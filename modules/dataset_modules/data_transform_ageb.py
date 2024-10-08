@@ -3,13 +3,14 @@ import sys
 import pandas as pd
 import logging
 from datetime import datetime
+import zipfile
 
 # Add the project root directory to the Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 sys.path.append(project_root)
 
 # Import configurations
-from modules.config import raw_data_path_ageb, urls_ageb, logs_folder #raw_data_path_enigh, interim_data_path_enigh, logs_folder
+from modules.config import raw_data_path_ageb, interim_data_path_ageb, logs_folder #raw_data_path_enigh, interim_data_path_enigh, logs_folder
 
 # Ensure the logs and metadata directories exist
 os.makedirs(logs_folder, exist_ok=True)
@@ -25,33 +26,39 @@ REQUIRED_COLUMNS = [
 ]
 
 def load_raw_ageb(file_path):
-    """Load raw AGEB data from a directory containing zip files."""
+    """Load raw AGEB data from a directory containing multiple CSV files."""
     try:
         df_ageb = pd.DataFrame()
         logging.info(f"Loading raw AGEB data from {file_path}...")
-        
-        # Iteramos sobre todas las 32 entidades
-        for ent in range(1, 33):
-            ent_str = str(ent).zfill(2)  # Formato con ceros a la izquierda
-            ageb_name = f"RESAGEBURB_{ent_str}CSV20.csv"
-            zip_file = f"resageburb_{ent_str}csv20.zip"
-            zip_path = os.path.join(file_path, zip_file) # Ruta completa del archivo ZIP
-            if os.path.exists(zip_path):
-                with zipfile.ZipFile(zip_path, 'r') as z:
-                    if ageb_name in z.namelist(): # Buscamos el archivo CSV dentro del ZIP
-                        logging.info(f"Extracting and loading {ageb_name} from {zip_file}...")
-                        with z.open(ageb_name) as f: # Cargamos el archivo CSV desde el ZIP
-                            df = pd.read_csv(f, encoding='latin-1', dtype={6: str})
-                            df.columns = ['ENTIDAD' if col == '﻿ENTIDAD' else col for col in df.columns]
-                            # Concatenamos al dataframe total
-                            df_ageb = pd.concat([df_ageb, df], ignore_index=True)
-            else:
-                logging.warning(f"{zip_file} not found in {file_path}")
-        logging.info(f"Loaded df_ageb shape: {df_ageb.shape}")
+
+        # Get all CSV files in the directory
+        csv_files = [f for f in os.listdir(file_path) if f.endswith('.csv')]
+
+        if not csv_files:
+            logging.warning(f"No CSV files found in {file_path}")
+            return None
+
+        # Iterate over each CSV file and load it
+        for csv_file in csv_files:
+            file_path_full = os.path.join(file_path, csv_file)
+            logging.info(f"Loading {csv_file}...")
+
+            # Load CSV into DataFrame
+            try:
+                df = pd.read_csv(file_path_full, encoding='latin-1', dtype={6: str})
+                # Fix encoding issues on the first column header
+                df.columns = ['ENTIDAD' if col == '﻿ENTIDAD' else col for col in df.columns]
+                df_ageb = pd.concat([df_ageb, df], ignore_index=True)  # Concatenate each CSV
+                logging.info(f"Loaded {csv_file} successfully, current shape: {df_ageb.shape}")
+            except Exception as e:
+                logging.error(f"Error loading {csv_file}: {e}")
+
+        logging.info(f"All AGEB files loaded successfully. Final shape: {df_ageb.shape}")
         return df_ageb
     except Exception as e:
         logging.error(f"Error loading data from {file_path}: {e}")
         return None
+
 
 def validate_data(data):
     """Validate the AGEB dataset to ensure it is tidy."""
@@ -69,7 +76,7 @@ def validate_data(data):
 
     # 3. Check for negative values in total population
     pop_columns = [col for col in REQUIRED_COLUMNS if "POBTOT" in col]
-    if (data[income_columns] < 0).any().any():
+    if (data["POBTOT"] < 0).any().any():
         logging.error("Negative population values detected.")
         return False
     return True
@@ -89,9 +96,6 @@ def transform_ageb_data(data):
         tidy_data_ageb = data[REQUIRED_COLUMNS].copy()  # Use .copy() to avoid SettingWithCopyWarning
         # Rename columns
         tidy_data_ageb.rename(columns={"ENTIDAD":'ent',"MUN": "mun",'NOM_LOC':'nom_loc','AGEB':'ageb','POBTOT':'pob_tot'}, inplace=True)
-
-        # Ensure 'pob_tot' is explicitly converted to a string
-        tidy_data_ageb.loc[:, 'pob_tot'] = tidy_data_ageb['pob_tot'].astype(str)
 
         logging.info(f"Transformed data shape: {tidy_data_ageb.shape}")
         return tidy_data_ageb
@@ -122,16 +126,8 @@ def create_metadata(output_path, raw_data_path):
         f.write(f"Selected columns: {', '.join(REQUIRED_COLUMNS)}\n")
         logging.info(f"Metadata generated at {metadata_file}")
 
-def generate_summary_statistics(data):
-    """Generate summary statistics for validation."""
-    try:
-        summary_stats = data[["ing_cor", "ingtrab", "factor"]].describe()
-        logging.info(f"Summary statistics:\n{summary_stats}")
-    except Exception as e:
-        logging.error(f"Error generating summary statistics: {e}")
-
 if __name__ == "__main__":
-    output_file_path = os.path.join(interim_data_path, "ageb_tidy_data.csv")
+    output_file_path = os.path.join(interim_data_path_ageb, "ageb_tidy_data.csv")
 
     # Load raw data
     raw_data = load_raw_ageb(raw_data_path_ageb)
@@ -149,7 +145,5 @@ if __name__ == "__main__":
                 # Create metadata
                 create_metadata(output_file_path, raw_data_path_ageb)
 
-                # Generate summary statistics for validation
-                generate_summary_statistics(tidy_data)
 
     logging.info("AGEB data transformation process completed.")

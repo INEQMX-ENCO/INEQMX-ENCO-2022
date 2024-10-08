@@ -95,6 +95,12 @@ def download_data():
         # Download ENCO datasets in parallel
         executor.map(lambda url: download_and_extract_zip(url, raw_data_path_enco), urls_enco)
 
+        # Download AGEB datasets in parallel
+        executor.map(lambda url: download_and_extract_zip(url, raw_data_path_ageb), url_ageb)
+
+        # Download SHP datasets in parallel
+        executor.map(lambda url: download_and_extract_zip(url, raw_data_path_shp), url_shp)
+
     # Download ENIGH dataset after ENCO downloads
     download_and_extract_zip(url_enigh, extract_path=raw_data_path_enigh)
 
@@ -155,6 +161,33 @@ def create_metadata():
         else:
             f.write("No files or directories found in the ENIGH folder.\n")
 
+        # AGEB Metadata
+        f.write("Source: INEGI 2020\n")
+        f.write(f"URLs: {', '.join(url_ageb)}\n")
+        f.write(f"Download date: {datetime.now()}\n")
+        f.write("Description: Area GeoEstadistica Basica (AGEB) for the year 2020.\n")
+
+        # List all files and subfolders in the AGEB directory and write to metadata
+        ageb_info = list_files_and_folders(raw_data_path_ageb)
+        if ageb_info:
+            for info in ageb_info:
+                f.write(f"{info}\n")
+        else:
+            f.write("No files or directories found in the AGEB folder.\n")
+
+        # SHP Metadata
+        f.write("\nSource: INEGI 2020\n")
+        f.write(f"URL: {url_shp}\n")
+        f.write(f"Download date: {datetime.now()}\n")
+        f.write("Description: SHP for the year 2020.\n")
+
+        # List all files and subfolders in the SHP directory and write to metadata
+        shp_info = list_files_and_folders(raw_data_path_shp)
+        if shp_info:
+            for info in shp_info:
+                f.write(f"{info}\n")
+        else:
+            f.write("No files or directories found in the SHP folder.\n")
 
 
     logging.info(f"Metadata generated at {metadata_file}")
