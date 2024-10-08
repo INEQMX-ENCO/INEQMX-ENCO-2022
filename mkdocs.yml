@@ -1,0 +1,7 @@
+site_name: INEQMX-ENCO 2022
+theme:
+  name: material
+nav:
+  - Home: index.md
+  - ENCO Data Visualization: visualization_enco.md
+  - ENIGH Data Visualization: visualization_enigh.md
