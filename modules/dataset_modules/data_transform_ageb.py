@@ -3,14 +3,13 @@ import sys
 import pandas as pd
 import logging
 from datetime import datetime
-import zipfile
 
 # Add the project root directory to the Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 sys.path.append(project_root)
 
 # Import configurations
-from modules.config import raw_data_path_ageb, interim_data_path_ageb, logs_folder #raw_data_path_enigh, interim_data_path_enigh, logs_folder
+from modules.config import raw_data_path_ageb, interim_data_path_ageb, logs_folder
 
 # Ensure the logs and metadata directories exist
 os.makedirs(logs_folder, exist_ok=True)
@@ -21,9 +20,7 @@ logging.basicConfig(filename=log_filename, level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s', filemode='w')
 
 # Columns to select
-REQUIRED_COLUMNS = [
-    "ENTIDAD",'MUN','NOM_LOC','AGEB','POBTOT'
-]
+REQUIRED_COLUMNS = ["ENTIDAD", 'MUN', 'NOM_LOC', 'AGEB', 'POBTOT']
 
 def load_raw_ageb(file_path):
     """Load raw AGEB data from a directory containing multiple CSV files."""
@@ -59,70 +56,82 @@ def load_raw_ageb(file_path):
         logging.error(f"Error loading data from {file_path}: {e}")
         return None
 
-
 def validate_data(data):
     """Validate the AGEB dataset to ensure it is tidy."""
-    # Check if required columns are present
-    missing_columns = [col for col in REQUIRED_COLUMNS if col not in data.columns]
-    if missing_columns:
-        logging.error(f"Missing columns: {missing_columns}")
+    try:
+        logging.info("Validating AGEB data...")
+
+        # Check if required columns are present
+        missing_columns = [col for col in REQUIRED_COLUMNS if col not in data.columns]
+        if missing_columns:
+            logging.error(f"Missing columns: {missing_columns}")
+            return False
+
+        # Validation functions
+        def validate_row_ent(entidad):
+            """Validate 'ENTIDAD' column: 2-digit string in range [00, 32]."""
+            if isinstance(entidad, str) and len(entidad) == 2:
+                try:
+                    val = int(entidad)
+                    return 0 <= val <= 32
+                except ValueError:
+                    return False
+            return False
+
+        def validate_row_mun(municipio):
+            """Validate 'MUN' column: 3-digit string in range [000, 570]."""
+            if isinstance(municipio, str) and len(municipio) == 3:
+                try:
+                    val = int(municipio)
+                    return 0 <= val <= 570
+                except ValueError:
+                    return False
+            return False
+
+        def validate_row_nom_loc(nom_loc):
+            """Validate 'NOM_LOC' column: string with alphanumeric values, max 50 characters."""
+            return isinstance(nom_loc, str) and len(nom_loc) <= 50
+
+        def validate_row_ageb(ageb):
+            """Validate 'AGEB' column: alphanumeric string, max 4 characters."""
+            return isinstance(ageb, str) and len(ageb) == 4
+
+        def validate_row_pob_tot(pobtot):
+            """Validate 'POBTOT' column: integer value in range [0, 999999999]."""
+            return isinstance(pobtot, int) and 0 <= pobtot <= 999999999
+
+        # Apply validation functions to each column
+        cond_ent = data['ENTIDAD'].apply(validate_row_ent).all()
+        cond_mun = data['MUN'].apply(validate_row_mun).all()
+        cond_nom_loc = data['NOM_LOC'].apply(validate_row_nom_loc).all()
+        cond_ageb = data['AGEB'].apply(validate_row_ageb).all()
+        cond_pob_tot = data['POBTOT'].apply(validate_row_pob_tot).all()
+
+        # Log detailed information about the validation result
+        if not cond_ent:
+            logging.error("Validation failed: 'ENTIDAD' column has invalid values.")
+        if not cond_mun:
+            logging.error("Validation failed: 'MUN' column has invalid values.")
+        if not cond_nom_loc:
+            logging.error("Validation failed: 'NOM_LOC' column has invalid values.")
+        if not cond_ageb:
+            logging.error("Validation failed: 'AGEB' column has invalid values.")
+        if not cond_pob_tot:
+            logging.error("Validation failed: 'POBTOT' column has invalid values.")
+
+        # Check if all conditions are met
+        all_valid = cond_ent and cond_mun and cond_nom_loc and cond_ageb and cond_pob_tot
+
+        if all_valid:
+            logging.info("Data validation passed.")
+            return True
+        else:
+            logging.error("Data validation failed.")
+            return False
+    except Exception as e:
+        logging.error(f"Error during validation: {e}")
         return False
-    # Function for 'ENTIDAD' row
-    def validate_row_ent(entidad):
-        """Clave de entidad federativa={column:ENTIDAD, type:str, range:[00,32], max_len:2}"""
-        if isinstance(entidad, str) and len(entidad) <= 2:
-            try:
-                # To int
-                val = int(entidad)
-                # Range [0-32]
-                return 0 <= val <= 32
-            except ValueError:
-                # If unable to change to int, return False
-                return False
-        return False  # False if not string or len>2
-    cond_ent=data['ENTIDAD'].apply(validate_row_ent).all() # Verify function for all column values
 
-    # Function for 'MUN' row
-    def validate_row_mun(municipio):
-        """Clave de municipio o demarcación territorial={column:MUN, type:str, range:[000,570], max_len:3}"""
-        if isinstance(municipio, str) and len(municipio) <= 3:
-            try:
-                # To int
-                val = int(municipio)
-                # Range [0-570]
-                return 0 <= val <= 570
-            except ValueError:
-                # If unable to change to int, return False
-                return False
-        return False  # False if not string or len>3
-    cond_mun=data['MUN'].apply(validate_row_mun).all() # Verify function for all column values
-
-    # Function for 'NOM_MUN' row
-    def validate_row_nom_mun(nom_mun):
-        """Municipio o demarcación territorial={column:NOM_MUN, type:str(alnum/alphanumeric), range:alphanumeric, max_len:50}"""
-        if isinstance(nom_mun, str) and nom_mun.isalnum() and len(nom_mun) <= 50:
-            return True
-        return False  # False if not string, alphanumeric, or len>50
-    cond_nom_mun=data['NOM_MUN'].apply(validate_row_nom_mun).all() # Verify function for all column values
-
-    # Function for 'AGEB' row
-    def validate_row_ageb(ageb):
-        """Municipio o demarcación territorial={column:AGEB, type:str(alnum/alphanumeric), range:alphanumeric, max_len:50}"""
-        if isinstance(ageb, str) and ageb.isalnum() and len(ageb) <= 4:
-            return True
-        return False  # False if not string, alphanumeric, or len>50
-    cond_ageb=data['AGEB'].apply(validate_row_ageb).all() # Verify function for all column values
-
-    # Function for 'POBTOT' row
-    def validar_fila_pob_tot(valor):
-        """Población total={column:POBTOT, type:int, range:[0-999999999], max_len:9}"""
-        if isinstance(valor, int): # Check if int
-            return 0 <= valor <= 999999999 and len(str(valor)) <= 9 # Check range and max len
-        return False  # False is not an it
-    cond_pob_tot=data['POBTOT'].apply(validar_fila_pob_tot).all() # Verify function for all column values
-
-    Cumple=cond_ent and cond_mun and cond_nom_mun and cond_ageb and cond_pob_tot
-    return Cumple
 
 def transform_ageb_data(data):
     """Select necessary columns and create tidy dataset."""
@@ -137,8 +146,15 @@ def transform_ageb_data(data):
 
         # Select necessary columns
         tidy_data_ageb = data[REQUIRED_COLUMNS].copy()  # Use .copy() to avoid SettingWithCopyWarning
-        # Rename columns
-        tidy_data_ageb.rename(columns={"ENTIDAD":'ent',"MUN": "mun",'NOM_LOC':'nom_loc','AGEB':'ageb','POBTOT':'pob_tot'}, inplace=True)
+
+        # Rename columns for consistency
+        tidy_data_ageb.rename(columns={
+            "ENTIDAD": 'ent',
+            "MUN": "mun",
+            'NOM_LOC': 'nom_loc',
+            'AGEB': 'ageb',
+            'POBTOT': 'pob_tot'
+        }, inplace=True)
 
         logging.info(f"Transformed data shape: {tidy_data_ageb.shape}")
         return tidy_data_ageb
@@ -152,6 +168,9 @@ def transform_ageb_data(data):
 def save_tidy_data_ageb(data, output_path):
     """Save the transformed tidy data."""
     try:
+        # Add a log to verify the save path
+        logging.info(f"Attempting to save tidy data to {output_path}")
+        
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
         data.to_csv(output_path, index=False)
         logging.info(f"Saved tidy data to {output_path}")
@@ -160,14 +179,20 @@ def save_tidy_data_ageb(data, output_path):
 
 def create_metadata(output_path, raw_data_path):
     """Create metadata for the processed data."""
-    metadata_file = os.path.abspath(os.path.join("data", "metadata", "ageb_transform_metadata.txt"))
-    with open(metadata_file, 'w') as f:
-        f.write("Metadata for AGEB Data Transformation\n")
-        f.write(f"Source: {raw_data_path}\n")
-        f.write(f"Transformation date: {datetime.now()}\n")
-        f.write(f"Tidy data saved at: {output_path}\n")
-        f.write(f"Selected columns: {', '.join(REQUIRED_COLUMNS)}\n")
+    try:
+        metadata_file = os.path.abspath(os.path.join("data", "metadata", "ageb_transform_metadata.txt"))
+        logging.info(f"Attempting to create metadata file at {metadata_file}")
+        
+        os.makedirs(os.path.dirname(metadata_file), exist_ok=True)
+        with open(metadata_file, 'w') as f:
+            f.write("Metadata for AGEB Data Transformation\n")
+            f.write(f"Source: {raw_data_path}\n")
+            f.write(f"Transformation date: {datetime.now()}\n")
+            f.write(f"Tidy data saved at: {output_path}\n")
+            f.write(f"Selected columns: {', '.join(REQUIRED_COLUMNS)}\n")
         logging.info(f"Metadata generated at {metadata_file}")
+    except Exception as e:
+        logging.error(f"Error creating metadata: {e}")
 
 if __name__ == "__main__":
     output_file_path = os.path.join(interim_data_path_ageb, "ageb_tidy_data.csv")
@@ -187,6 +212,5 @@ if __name__ == "__main__":
 
                 # Create metadata
                 create_metadata(output_file_path, raw_data_path_ageb)
-
 
     logging.info("AGEB data transformation process completed.")
