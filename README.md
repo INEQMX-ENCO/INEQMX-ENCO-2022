@@ -63,26 +63,29 @@ The final data product is designed for a diverse audience, including:
 ## Usage Instructions
 
 1. Clone the repository: `git clone https://github.com/INEQMX-ENCO/INEQMX-ENCO-2022`
-2. Install the dependencies: `pip install -r requirements.txt`
-3. Run the Makefile commands: `make data`, `make train`, etc.
-4. Explore the notebooks: `jupyter notebook`
-5. Check the reports and figures in the `reports/` directory.
+2. Install the dependencies: `make requirements`
+3. Create enviroment: `make create_environment`
+3. Run the Makefile Data Pipeline: `make full_pipeline`
 
-## Requirements
+### Data 
 
-To run this project, you need the following Python 3.12+ packages:
+To download the raw data separately: `make download_data`
+To transform raw data into an interim format: `make transform_data`
+You can clean up the intermediate and processed files by running: `make clean_data`
 
-- pandas
-- geopandas
-- numpy
-- requests
-- tqdm
+This will remove all files in the data/interim/ and data/processed/ directories.
 
-You can install the required packages using pip:
+### Generating Profiling Reports
+The profiling reports for the datasets are generated using ydata-profiling and Sweetviz.
 
-```bash
-pip install -r requirements.txt
-```
+1. To generate a ydata-profiling report:`make generate_profiling_report`
+This will run the profiling script and generate HTML reports in the docs/assets/ directory.
+
+2. To generate visualizations (both ydata-profiling and Sweetviz): `make generate_visualizations`
+The visualizations will be saved in the docs/assets/ directory, where they can be accessed and embedded into the documentation.
+
+### Available Commands
+To list all available commands in the Makefile, run: `make help`
 
 ## Data Sources
 
@@ -91,6 +94,20 @@ The data used in this project comes from:
 - [ENCO](https://www.inegi.org.mx/programas/enco/): National Consumer Confidence Survey by INEGI.
 - [ENIGH 2022](https://www.inegi.org.mx/programas/enigh/nc/2022/): National Survey on Household Income and Expenditure by INEGI.
 
+# INEQMX-ENCO-2022 Data Profiling and Visualization
+
+This project contains data visualizations and automated profiling reports for the INEQMX-ENCO-2022 dataset. The data has been processed and profiled using two tools:
+- **[ydata-profiling](https://github.com/ydataai/ydata-profiling)**: Provides detailed profiling reports of the datasets.
+- **[Sweetviz](https://github.com/fbdesignpro/sweetviz)**: Offers interactive exploratory data analysis (EDA) reports with visual insights.
+
+Once the reports have been generated, you can view them by opening the HTML files in the docs/assets/ directory, or by accessing them through the deployed MkDocs site.
+
+#### ENCO Data Reports
+[YData Profiling Report (ENCO)](https://ineqmx-enco.github.io/INEQMX-ENCO-2022/assets/interim_enco_profiling_report.html)
+[Sweetviz Report (ENCO)](https://ineqmx-enco.github.io/INEQMX-ENCO-2022/assets/interim_enco_sweetviz_report.html)
+#### ENIGH Data Reports
+[YData Profiling Report (ENIGH)](https://ineqmx-enco.github.io/INEQMX-ENCO-2022/assets/interim_enigh_profiling_report.html)
+[Sweetviz Report (ENIGH)](https://ineqmx-enco.github.io/INEQMX-ENCO-2022/assets/interim_enigh_sweetviz_report.html)
 
 ## Quality Assurance
 
@@ -105,7 +122,7 @@ This project includes a data validation process during processing, to ensure tha
 
 To run processing and quality assurance, use the following command:
 ```bash
-python modules/dataset_modules/data_transform_enco.py
+`make transform_data`
 ```
 
 ## Contributing

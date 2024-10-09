@@ -61,27 +61,38 @@ format:
 ## Set up python interpreter environment
 .PHONY: create_environment
 create_environment:
+	@echo ">>> Setting up Python environment..."
 	@bash -c "if [ ! -z `which virtualenvwrapper.sh` ]; then source `which virtualenvwrapper.sh`; mkvirtualenv $(PROJECT_NAME) --python=$(PYTHON_INTERPRETER); else mkvirtualenv.bat $(PROJECT_NAME) --python=$(PYTHON_INTERPRETER); fi"
-	@echo ">>> New virtualenv created. Activate with:\nworkon $(PROJECT_NAME)"
-	
+	@echo ">>> New virtualenv created. Activate with: workon $(PROJECT_NAME)"
 
-## Generate profiling report with ydata-profiling
-.PHONY: generate_profiling_report
-generate_profiling_report:
-	@echo ">>> Generating profiling report with ydata-profiling..."
-	$(PYTHON_INTERPRETER) scripts/generate_ydata_profiling_report.py
+## Generate visualizations
+.PHONY: generate_visualizations
+generate_visualizations:
+	@echo ">>> Generating visualizations..."
+	@$(PYTHON_INTERPRETER) $(SCRIPTS_DIR)/generate_pygwalker_viz.py
+
+## Build documentation with MkDocs
+.PHONY: build_docs
+build_docs:
+	@echo ">>> Building documentation..."
+	@mkdocs build
+
+## Deploy documentation pipeline (MkDocs)
+.PHONY: deploy_docs
+deploy_docs:
+	@echo ">>> Deploying MkDocs site to GitHub Pages..."
+	@mkdocs gh-deploy --force
 #################################################################################
 # PROJECT RULES                                                                 #
 #################################################################################
 
-## Full data pipeline (download, transform, visualize)
+## Full data pipeline (download, transform, generate, visualize)
 .PHONY: full_pipeline
 full_pipeline: download_data transform_data generate_visualizations
 
-## Deploy documentation pipeline (MkDocs)
+## Deploy documentation (generate visualizations and deploy)
 .PHONY: deploy
 deploy: generate_visualizations deploy_docs
-
 
 #################################################################################
 # Self Documenting Commands                                                     #
