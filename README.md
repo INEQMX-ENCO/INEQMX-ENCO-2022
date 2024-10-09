@@ -102,6 +102,8 @@ This project contains data visualizations and automated profiling reports for th
 
 Once the reports have been generated, you can view them by opening the HTML files in the docs/assets/ directory, or by accessing them through the deployed MkDocs site.
 
+[INEQMX-ENCO](https://ineqmx-enco.github.io/INEQMX-ENCO-2022/)
+
 #### ENCO Data Reports
 [YData Profiling Report (ENCO)](https://ineqmx-enco.github.io/INEQMX-ENCO-2022/assets/interim_enco_profiling_report.html)
 [Sweetviz Report (ENCO)](https://ineqmx-enco.github.io/INEQMX-ENCO-2022/assets/interim_enco_sweetviz_report.html)
