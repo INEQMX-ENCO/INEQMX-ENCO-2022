@@ -3,7 +3,7 @@ import os
 # Paths for storing raw data
 raw_data_path_enco = os.path.abspath(os.path.join("data", "raw", "enco"))
 raw_data_path_enigh = os.path.abspath(os.path.join("data", "raw", "enigh"))
-raw_data_path_ageb = os.path.abspath(os.path.join("data", "raw", "ageb"))
+raw_data_path_pob = os.path.abspath(os.path.join("data", "raw", "pob"))
 raw_data_path_shp = os.path.abspath(os.path.join("data", "raw", "shp"))
 
 # ENCO dataset URLs
@@ -15,9 +15,8 @@ url_enigh = "https://www.inegi.org.mx/contenidos/programas/enigh/nc/2022/datosab
 interim_data_path_enigh = os.path.abspath(os.path.join("data", "interim", "enigh"))
 interim_data_path = os.path.abspath(os.path.join("data", "interim", "enco"))
 
-# AGEB dataset URLs
-base_url_ageb = "https://www.inegi.org.mx/contenidos/programas/ccpv/iter/zip/resageburb20/"
-urls_ageb = [f"{base_url_ageb}resageburb_{str(i).zfill(2)}csv20.zip" for i in range(1, 33)]
+# POB dataset URL
+url_pob = "https://www.inegi.org.mx/contenidos/programas/ccpv/2020/datosabiertos/iter/iter_00_cpv2020_csv.zip"
 
 # SHP dataset URLs
 base_url_shp = "https://www.inegi.org.mx/contenidos/descargadenue/MGdescarga/MGN2020_1/"

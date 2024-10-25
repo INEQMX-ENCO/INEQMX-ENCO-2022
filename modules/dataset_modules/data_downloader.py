@@ -14,7 +14,7 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")
 sys.path.append(project_root)
 
 # Now you can import modules
-from modules.config import urls_enco, url_enigh, url_ageb, url_shp, raw_data_path_enco, raw_data_path_enigh, raw_data_path_ageb, raw_data_path_shp
+from modules.config import urls_enco, url_enigh, url_pob, urls_shp, raw_data_path_enco, raw_data_path_enigh, raw_data_path_pob, raw_data_path_shp
 
 # Setup logging configuration
 logging.basicConfig(filename=f"logs/data_downloader_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log", level=logging.INFO,
@@ -83,25 +83,25 @@ def download_data():
     # Clean directories before downloading new data
     clean_directory(raw_data_path_enco, preserve_files=['.gitkeep'])
     clean_directory(raw_data_path_enigh, preserve_files=['.gitkeep'])
-    clean_directory(raw_data_path_ageb, preserve_files=['.gitkeep'])
+    clean_directory(raw_data_path_pob, preserve_files=['.gitkeep'])
     clean_directory(raw_data_path_shp, preserve_files=['.gitkeep'])
 
     os.makedirs(raw_data_path_enco, exist_ok=True)
     os.makedirs(raw_data_path_enigh, exist_ok=True)
-    os.makedirs(raw_data_path_ageb, exist_ok=True)
+    os.makedirs(raw_data_path_pob, exist_ok=True)
     os.makedirs(raw_data_path_shp, exist_ok=True)
 
     with ThreadPoolExecutor(max_workers=4) as executor:
         # Download ENCO datasets in parallel
         executor.map(lambda url: download_and_extract_zip(url, raw_data_path_enco), urls_enco)
 
-        # Download AGEB datasets in parallel
-        executor.map(lambda url: download_and_extract_zip(url, raw_data_path_ageb), urls_ageb)
-
         # Download SHP datasets in parallel
         executor.map(lambda url: download_and_extract_zip(url, raw_data_path_shp), urls_shp)
 
-    # Download ENIGH dataset after ENCO downloads
+    # Download POB dataset after ENCO and SHP downloads
+    download_and_extract_zip(url_pob, extract_path=raw_data_path_pob)
+
+    # Download ENIGH dataset after POB downloads
     download_and_extract_zip(url_enigh, extract_path=raw_data_path_enigh)
 
 # Function to list only files in a directory and capture their metadata
@@ -161,19 +161,19 @@ def create_metadata():
         else:
             f.write("No files or directories found in the ENIGH folder.\n")
 
-        # AGEB Metadata
+        # POB Metadata
         f.write("Source: INEGI 2020\n")
-        f.write(f"URLs: {', '.join(urls_ageb)}\n")
+        f.write(f"URL: {', '.join(url_pob)}\n")
         f.write(f"Download date: {datetime.now()}\n")
-        f.write("Description: Area GeoEstadistica Basica (AGEB) for the year 2020.\n")
+        f.write("Description: Censo de Población y Vivienda 2020.\n")
 
-        # List all files and subfolders in the AGEB directory and write to metadata
-        ageb_info = list_files_and_folders(raw_data_path_ageb)
-        if ageb_info:
-            for info in ageb_info:
+        # List all files and subfolders in the POB directory and write to metadata
+        apob_info = list_files_and_folders(raw_data_path_pob)
+        if pob_info:
+            for info in pob_info:
                 f.write(f"{info}\n")
         else:
-            f.write("No files or directories found in the AGEB folder.\n")
+            f.write("No files or directories found in the POB folder.\n")
 
         # SHP Metadata
         f.write("\nSource: INEGI 2020\n")
