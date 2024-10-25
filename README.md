@@ -70,8 +70,8 @@ The final data product is designed for a diverse audience, including:
 ### Data 
 
 To download the raw data separately: `make download_data`
-To transform raw data into an interim format: `make transform_data`
-You can clean up the intermediate and processed files by running: `make clean_data`
+To transform raw data into an interim format: `make clean_data`
+You can clean up the intermediate and processed files by running: `make clean_inter_data`
 
 This will remove all files in the data/interim/ and data/processed/ directories.
 

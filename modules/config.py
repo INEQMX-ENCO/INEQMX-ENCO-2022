@@ -1,29 +1,79 @@
 import os
 
-# Paths for storing raw data
-raw_data_path_enco = os.path.abspath(os.path.join("data", "raw", "enco"))
-raw_data_path_enigh = os.path.abspath(os.path.join("data", "raw", "enigh"))
-raw_data_path_ageb = os.path.abspath(os.path.join("data", "raw", "ageb"))
-raw_data_path_shp = os.path.abspath(os.path.join("data", "raw", "shp"))
+# Base paths
+BASE_RAW_DATA_PATH = os.path.abspath("data/raw")
+BASE_INTERIM_DATA_PATH = os.path.abspath("data/interim")
 
-# ENCO dataset URLs
-base_url_enco = "https://www.inegi.org.mx/contenidos/programas/enco/datosabiertos/2022/"
-urls_enco = [f"{base_url_enco}conjunto_de_datos_enco_2022_{str(i).zfill(2)}_csv.zip" for i in range(1, 13)]
-interim_data_path_enco = os.path.abspath(os.path.join("data", "interim", "enco"))
+# Paths for storing raw and interim data, organized by dataset and year
+data_paths = {
+    "enco": {
+        year: {
+            "raw": os.path.join(BASE_RAW_DATA_PATH, "enco", str(year)),
+            "interim": os.path.join(BASE_INTERIM_DATA_PATH, "enco", str(year))
+        } for year in [2018, 2020, 2022]
+    },
+    "enigh": {
+        year: {
+            "raw": os.path.join(BASE_RAW_DATA_PATH, "enigh", str(year)),
+            "interim": os.path.join(BASE_INTERIM_DATA_PATH, "enigh", str(year))
+        } for year in [2018, 2020, 2022]
+    },
+    "ageb": {
+        "raw": os.path.join(BASE_RAW_DATA_PATH, "ageb"),
+        "interim": os.path.join(BASE_INTERIM_DATA_PATH, "ageb")
+    },
+    "shp": {
+        "raw": os.path.join(BASE_RAW_DATA_PATH, "shp"),
+        "interim": os.path.join(BASE_INTERIM_DATA_PATH, "shp")
+    }
+}
 
-# ENIGH dataset URL
-url_enigh = "https://www.inegi.org.mx/contenidos/programas/enigh/nc/2022/datosabiertos/conjunto_de_datos_enigh_ns_2022_csv.zip"
-interim_data_path_enigh = os.path.abspath(os.path.join("data", "interim", "enigh"))
+# Patterns and exceptions for ENCO file naming by year and month
+years = {
+    2018: {
+        "pattern": "conjunto_de_datos_enco_2018_{month}_csv",
+        "exceptions": {
+            "01": "enco_enero_2018_csv",
+            "02": "enco_febrero_2018_csv",
+            "03": "enco_marzo_2018_csv",
+            "04": "enco_abril_2018_csv",
+            "05": "enco_mayo_2018_csv",
+            "06": "conjunto_de_datos_enco0618_csv",
+            "07": "conjunto_de_datos_enco0718_csv"
+        }
+    },
+    2020: {
+        "pattern": "conjunto_de_datos_enco_2020_{month}_csv",
+        "exceptions": {
+            "04": None, "05": None, "06": None, "07": None  # Missing months
+        }
+    },
+    2022: {
+        "pattern": "conjunto_de_datos_enco_2022_{month}_csv"
+    }
+}
 
-# AGEB dataset URLs
-base_url_ageb = "https://www.inegi.org.mx/contenidos/programas/ccpv/iter/zip/resageburb20/"
-url_ageb = [f"{base_url_ageb}resageburb_{str(i).zfill(2)}csv20.zip" for i in range(1, 33)]
-interim_data_path_ageb = os.path.abspath(os.path.join("data", "interim", "ageb"))
+# Base URLs for datasets
+BASE_URL_ENCO = "https://www.inegi.org.mx/contenidos/programas/enco/datosabiertos/{year}/{filename}.zip"
+BASE_URL_ENIGH = "https://www.inegi.org.mx/contenidos/programas/enigh/nc"
+BASE_URL_AGEB = "https://www.inegi.org.mx/contenidos/programas/ccpv/iter/zip/resageburb20"
+BASE_URL_SHP = "https://www.inegi.org.mx/contenidos/descargadenue/MGdescarga/MGN2020_1"
 
-# SHP dataset URLs
-base_url_shp = "https://www.inegi.org.mx/contenidos/descargadenue/MGdescarga/MGN2020_1/"
-url_shp = [f"{base_url_shp}2020_1_00_{str(i)}.zip" for i in ['ENT','MUN']]
-interim_data_path_shp = os.path.abspath(os.path.join("data", "interim", "shp"))
+# Download URLs by dataset and year
+urls = {
+    "enco": {
+        2018: [f"{BASE_URL_ENCO}/2018/conjunto_de_datos_enco_2018_{str(i).zfill(2)}_csv.zip" for i in range(1, 13)],
+        2020: [f"{BASE_URL_ENCO}/2020/conjunto_de_datos_enco_2020_{str(i).zfill(2)}_csv.zip" for i in range(1, 13)],
+        2022: [f"{BASE_URL_ENCO}/2022/conjunto_de_datos_enco_2022_{str(i).zfill(2)}_csv.zip" for i in range(1, 13)]
+    },
+    "enigh": {
+        2018: f"{BASE_URL_ENIGH}/2018/datosabiertos/conjunto_de_datos_enigh_2018_ns_csv.zip",
+        2020: f"{BASE_URL_ENIGH}/2020/datosabiertos/conjunto_de_datos_enigh_ns_2020_csv.zip",
+        2022: f"{BASE_URL_ENIGH}/2022/datosabiertos/conjunto_de_datos_enigh_ns_2022_csv.zip"
+    },
+    "ageb": [f"{BASE_URL_AGEB}/resageburb_{str(i).zfill(2)}csv20.zip" for i in range(1, 33)],
+    "shp": [f"{BASE_URL_SHP}/2020_1_00_{i}.zip" for i in ["ENT", "MUN"]]
+}
 
 # Path for logs folder
-logs_folder = "logs"
+LOGS_FOLDER = os.path.abspath("logs")
