@@ -20,7 +20,7 @@ url_pob = "https://www.inegi.org.mx/contenidos/programas/ccpv/2020/datosabiertos
 
 # SHP dataset URLs
 base_url_shp = "https://www.inegi.org.mx/contenidos/descargadenue/MGdescarga/MGN2020_1/"
-urls_shp = [f"{base_url_ageb_shp}2020_1_00_{str(i)}.zip" for i in ['ENT','MUN']]
+urls_shp = [f"{base_url_shp}2020_1_00_{str(i)}.zip" for i in ['ENT','MUN']]
 
 # Path for logs folder
 logs_folder = "logs"

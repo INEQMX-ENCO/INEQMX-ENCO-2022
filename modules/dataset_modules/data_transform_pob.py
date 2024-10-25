@@ -8,6 +8,10 @@ from datetime import datetime
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 sys.path.append(project_root)
 
+# Tidy directory
+interim_data_path = os.path.abspath(os.path.join("data", "interim", "pob"))
+os.makedirs(interim_data_path, exist_ok=True)
+
 # Import configurations
 from modules.config import raw_data_path_pob, url_pob, logs_folder
 
@@ -171,7 +175,7 @@ def generate_summary_statistics(data):
         logging.error(f"Error generating summary statistics: {e}")
 
 if __name__ == "__main__":
-    output_file_path = os.path.join(interim_data_path_pob, "pob_tidy_data.csv")
+    output_file_path = os.path.join(interim_data_path, "pob_tidy_data.csv")
 
     # Load raw data
     raw_data = load_raw_pob(raw_data_path_pob)

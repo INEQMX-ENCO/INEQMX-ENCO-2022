@@ -168,7 +168,7 @@ def create_metadata():
         f.write("Description: Censo de Población y Vivienda 2020.\n")
 
         # List all files and subfolders in the POB directory and write to metadata
-        apob_info = list_files_and_folders(raw_data_path_pob)
+        pob_info = list_files_and_folders(raw_data_path_pob)
         if pob_info:
             for info in pob_info:
                 f.write(f"{info}\n")
