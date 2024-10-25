@@ -24,16 +24,16 @@ download_data:
 	$(PYTHON_INTERPRETER) modules/dataset_modules/data_downloader.py
 
 ## Transform raw data into interim data
-.PHONY: transform_data
+.PHONY: clean_data
 transform_data:
 	@echo ">>> Transforming raw data..."
-	$(PYTHON_INTERPRETER) modules/dataset_modules/data_transform_enco.py
-	$(PYTHON_INTERPRETER) modules/dataset_modules/data_transform_engih.py
+	$(PYTHON_INTERPRETER) modules/dataset_modules/data_clean_enco.py
+	$(PYTHON_INTERPRETER) modules/dataset_modules/data_clean_engih.py
 	$(PYTHON_INTERPRETER) modules/dataset_modules/data_transform_shp.py
 	$(PYTHON_INTERPRETER) modules/dataset_modules/data_transform_ageb.py
 
 ## Clean intermediate and processed files
-.PHONY: clean_data
+.PHONY: clean_inter_data
 clean_data:
 	@echo ">>> Cleaning up intermediate files..."
 	rm -rf data/interim/*

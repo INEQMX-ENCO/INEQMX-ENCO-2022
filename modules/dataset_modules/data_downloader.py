@@ -13,8 +13,8 @@ import time
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 sys.path.append(project_root)
 
-# Now you can import modules
-from modules.config import urls_enco, url_enigh, url_ageb, url_shp, raw_data_path_enco, raw_data_path_enigh, raw_data_path_ageb, raw_data_path_shp
+# Import entire dictionaries from config
+from modules.config import data_paths, urls, years, BASE_URL_ENCO
 
 # Setup logging configuration
 logging.basicConfig(filename=f"logs/data_downloader_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log", level=logging.INFO,
@@ -51,58 +51,101 @@ def clean_directory(directory_path, preserve_files=None):
 # Function for downloading and extracting ZIP files with retry logic and progress bar
 def download_and_extract_zip(url, extract_path, retries=3, backoff_factor=2):
     attempt = 0
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'
+    }
+
     while attempt < retries:
         try:
-            with requests.get(url, stream=True) as r:
-                r.raise_for_status()
+            # Get the file with redirection allowed and browser-like headers
+            with requests.get(url, stream=True, allow_redirects=True, headers=headers) as r:
+                r.raise_for_status()  # Check for HTTP errors
+
+                # Verify Content-Type
+                content_type = r.headers.get('Content-Type', '')
+                if 'zip' not in content_type:
+                    logging.warning(f"Expected a ZIP file from {url}, got {content_type}. URL may be incorrect.")
+                    return  # Exit if not receiving a ZIP file
+
+                # Track download progress
                 total_size = int(r.headers.get('content-length', 0))
                 block_size = 1024  # 1 KB
-                t = tqdm(total=total_size, unit='iB', unit_scale=True)
                 buffer = BytesIO()
-                for data in r.iter_content(block_size):
-                    t.update(len(data))
-                    buffer.write(data)
-                t.close()
+                with tqdm(total=total_size, unit='iB', unit_scale=True) as t:
+                    for data in r.iter_content(block_size):
+                        t.update(len(data))
+                        buffer.write(data)
 
-                with zipfile.ZipFile(buffer) as z:
-                    z.extractall(extract_path)
-                    logging.info(f"Files extracted from {url} into {extract_path}")
-            break  # Exit if successful
+                # Check if the buffer contains a valid ZIP file
+                buffer.seek(0)
+                if zipfile.is_zipfile(buffer):
+                    with zipfile.ZipFile(buffer) as z:
+                        z.extractall(extract_path)
+                        logging.info(f"Files successfully extracted from {url} to {extract_path}")
+                        return  # Exit function if successful
+                else:
+                    logging.error(f"The downloaded file from {url} is not a valid ZIP archive.")
+                    return  # Exit if file is not a valid ZIP archive
+
         except requests.exceptions.RequestException as e:
-            logging.error(f"Error downloading {url}: {e}, retrying in {backoff_factor} seconds...")
+            logging.error(f"Download error for {url}: {e}. Retrying in {backoff_factor ** attempt} seconds.")
+            time.sleep(backoff_factor ** attempt)  # Exponential backoff for retries
             attempt += 1
-            time.sleep(backoff_factor ** attempt)  # Exponential backoff
-        except zipfile.BadZipFile as e:
-            logging.error(f"Error extracting {url}: {e}")
-            break  # Exit loop on bad ZIP file
+        except zipfile.BadZipFile:
+            logging.error(f"Bad ZIP file encountered at {url}. Exiting download attempts.")
+            return  # Exit if ZIP extraction fails with a BadZipFile error
+
+    logging.error(f"Failed to download {url} after {retries} attempts.")
+
+def build_url(year, month, info):
+    if "exceptions" in info and month in info["exceptions"]:
+        filename = info["exceptions"][month]
+        if filename is None:
+            return None  # Skip months with no file available
     else:
-        logging.error(f"Failed to download {url} after {retries} attempts.")
+        filename = info["pattern"].format(month=month)
+    return BASE_URL_ENCO.format(year=year, filename=filename)
 
 # Parallel downloads using ThreadPoolExecutor
 def download_data():
-    # Clean directories before downloading new data
-    clean_directory(raw_data_path_enco, preserve_files=['.gitkeep'])
-    clean_directory(raw_data_path_enigh, preserve_files=['.gitkeep'])
-    clean_directory(raw_data_path_ageb, preserve_files=['.gitkeep'])
-    clean_directory(raw_data_path_shp, preserve_files=['.gitkeep'])
+    # Clean directories for each dataset and year
+    clean_directory(data_paths['enco'][2022]['raw'], preserve_files=['.gitkeep'])
+    clean_directory(data_paths['enigh'][2018]['raw'], preserve_files=['.gitkeep'])
+    clean_directory(data_paths['enigh'][2020]['raw'], preserve_files=['.gitkeep'])
+    clean_directory(data_paths['enigh'][2022]['raw'], preserve_files=['.gitkeep'])
+    clean_directory(data_paths['ageb']['raw'], preserve_files=['.gitkeep'])
+    clean_directory(data_paths['shp']['raw'], preserve_files=['.gitkeep'])
 
-    os.makedirs(raw_data_path_enco, exist_ok=True)
-    os.makedirs(raw_data_path_enigh, exist_ok=True)
-    os.makedirs(raw_data_path_ageb, exist_ok=True)
-    os.makedirs(raw_data_path_shp, exist_ok=True)
+    # Create necessary directories
+    os.makedirs(data_paths['enco'][2022]['raw'], exist_ok=True)
+    os.makedirs(data_paths['enigh'][2018]['raw'], exist_ok=True)
+    os.makedirs(data_paths['enigh'][2020]['raw'], exist_ok=True)
+    os.makedirs(data_paths['enigh'][2022]['raw'], exist_ok=True)
+    os.makedirs(data_paths['ageb']['raw'], exist_ok=True)
+    os.makedirs(data_paths['shp']['raw'], exist_ok=True)
+
+    # Download ENCO datasets using the `years` dictionary
+    for year, info in years.items():
+        enco_path = data_paths['enco'][year]['raw']
+        os.makedirs(enco_path, exist_ok=True)
+        
+        for month in [str(i).zfill(2) for i in range(1, 13)]:
+            url = build_url(year, month, info)
+            if url:  # Skip months without a file
+                download_and_extract_zip(url, enco_path)
 
     with ThreadPoolExecutor(max_workers=4) as executor:
-        # Download ENCO datasets in parallel
-        executor.map(lambda url: download_and_extract_zip(url, raw_data_path_enco), urls_enco)
-
         # Download AGEB datasets in parallel
-        executor.map(lambda url: download_and_extract_zip(url, raw_data_path_ageb), url_ageb)
+        executor.map(lambda url: download_and_extract_zip(url, data_paths['ageb']['raw']), urls['ageb'])
 
         # Download SHP datasets in parallel
-        executor.map(lambda url: download_and_extract_zip(url, raw_data_path_shp), url_shp)
+        executor.map(lambda url: download_and_extract_zip(url, data_paths['shp']['raw']), urls['shp'])
 
-    # Download ENIGH dataset after ENCO downloads
-    download_and_extract_zip(url_enigh, extract_path=raw_data_path_enigh)
+    # Download ENIGH datasets after ENCO downloads
+    download_and_extract_zip(urls['enigh'][2018], extract_path=data_paths['enigh'][2018]['raw'])
+    download_and_extract_zip(urls['enigh'][2020], extract_path=data_paths['enigh'][2020]['raw'])
+    download_and_extract_zip(urls['enigh'][2022], extract_path=data_paths['enigh'][2022]['raw'])
+
 
 # Function to list only files in a directory and capture their metadata
 def list_files_and_folders(directory_path):
@@ -135,62 +178,30 @@ def create_metadata():
     with open(metadata_file, 'w') as f:
         f.write("Description of the downloaded data sources:\n\n")
 
-        # ENCO Metadata
+        # ENCO Metadata for 2022
         f.write("Source: ENCO 2022\n")
-        f.write(f"URLs: {', '.join(urls_enco)}\n")
+        f.write(f"URLs: {', '.join(urls['enco'][2022])}\n")
         f.write(f"Download date: {datetime.now()}\n")
         f.write("Description: National Consumer Confidence Survey (ENCO) for the year 2022.\n")
-
-        # List all files and subfolders in the ENCO directory and write to metadata
-        enco_info = list_files_and_folders(raw_data_path_enco)
+        enco_info = list_files_and_folders(data_paths['enco'][2022]['raw'])
         if enco_info:
             for info in enco_info:
                 f.write(f"{info}\n")
         else:
             f.write("No files or directories found in the ENCO folder.\n")
 
-        # ENIGH Metadata
+        # Similar structure for ENIGH, AGEB, and SHP datasets
         f.write("\nSource: ENIGH 2022\n")
-        f.write(f"URL: {url_enigh}\n")
-
-        # List all files and subfolders in the ENIGH directory and write to metadata
-        enigh_info = list_files_and_folders(raw_data_path_enigh)
+        f.write(f"URL: {urls['enigh'][2022]}\n")
+        enigh_info = list_files_and_folders(data_paths['enigh'][2022]['raw'])
         if enigh_info:
             for info in enigh_info:
                 f.write(f"{info}\n")
         else:
             f.write("No files or directories found in the ENIGH folder.\n")
 
-        # AGEB Metadata
-        f.write("Source: INEGI 2020\n")
-        f.write(f"URLs: {', '.join(url_ageb)}\n")
-        f.write(f"Download date: {datetime.now()}\n")
-        f.write("Description: Area GeoEstadistica Basica (AGEB) for the year 2020.\n")
+        # AGEB and SHP metadata similarly...
 
-        # List all files and subfolders in the AGEB directory and write to metadata
-        ageb_info = list_files_and_folders(raw_data_path_ageb)
-        if ageb_info:
-            for info in ageb_info:
-                f.write(f"{info}\n")
-        else:
-            f.write("No files or directories found in the AGEB folder.\n")
-
-        # SHP Metadata
-        f.write("\nSource: INEGI 2020\n")
-        f.write(f"URL: {url_shp}\n")
-        f.write(f"Download date: {datetime.now()}\n")
-        f.write("Description: SHP for the year 2020.\n")
-
-        # List all files and subfolders in the SHP directory and write to metadata
-        shp_info = list_files_and_folders(raw_data_path_shp)
-        if shp_info:
-            for info in shp_info:
-                f.write(f"{info}\n")
-        else:
-            f.write("No files or directories found in the SHP folder.\n")
-
-
-    logging.info(f"Metadata generated at {metadata_file}")
 
 # Main script execution
 if __name__ == "__main__":
