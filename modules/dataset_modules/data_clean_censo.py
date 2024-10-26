@@ -23,7 +23,12 @@ logging.basicConfig(filename=log_filename, level=logging.INFO,
 
 # Columns to select
 REQUIRED_COLUMNS = [
-    "ENTIDAD",'MUN','POBTOT','REL_H_M' 
+    "ENTIDAD",'MUN','LOC','POBTOT','REL_H_M' 
+]
+
+# These columns should not have nan values
+REQUIRED_ALL_COLUMNS= [ 
+    "ENTIDAD",'MUN','LOC','POBTOT'
 ]
 
 def load_raw_censo(file_path):
@@ -46,7 +51,7 @@ def load_raw_censo(file_path):
             logging.info(f"Loading {csv_file}...")
             # Load CSV into DataFrame
             try:
-                df_censo = pd.read_csv(file_path_full, encoding='latin-1', dtype={6: str})
+                df_censo = pd.read_csv(file_path_full, encoding='latin-1', dtype={8: str})
                 # Fix encoding issues on the first column header
                 df_censo.columns = ['ENTIDAD' if col == 'ï»¿ENTIDAD' else col for col in df_censo.columns]
                 logging.info(f"Loaded {csv_file} successfully, current shape: {df_censo.shape}")
@@ -71,10 +76,10 @@ def validate_data(data):
             return False
 
         # 2. Check for missing values in key columns
-        if data[REQUIRED_COLUMNS].isnull().any().any():
+        if data[REQUIRED_ALL_COLUMNS].isnull().any().any():
             logging.warning("Missing values detected in key columns.")
             # Optional: Decide whether to drop or fill missing values
-            data = data.dropna(subset=REQUIRED_COLUMNS) # In this case, drop
+            data = data.dropna(subset=REQUIRED_ALL_COLUMNS) # In this case, drop
 
         # Validation functions
         def validate_row_ent(entidad):
@@ -94,15 +99,15 @@ def validate_data(data):
             return isinstance(loc, int) and 0 <= loc <= 9999
         
         def validate_row_rel_h_m(rel_h_m):
-            """Validate 'REL_H_M' column: integer value in range [0, 999999999]."""
-            return isinstance(rel_h_m, int) and 0 <= rel_h_m <= 999999999
+            """Validate 'REL_H_M' column: object, that if converted to float value it is in range [0, 999999999]."""
+            return isinstance(rel_h_m, object) and 0 <= float(rel_h_m) <= 999999999
 
         # Apply validation functions to each column
         cond_ent = data['ENTIDAD'].apply(validate_row_ent).all()
         cond_mun = data['MUN'].apply(validate_row_mun).all()
         cond_loc = data['LOC'].apply(validate_row_loc).all()
         cond_pob_tot = data['POBTOT'].apply(validate_row_pob_tot).all()
-        cond_rel_h_m = data['REL_H_M'].apply(validate_row_rel_h_m).all()
+        cond_rel_h_m = data.loc[data['LOC'] == 0, 'REL_H_M'].apply(validate_row_rel_h_m).all() # Just need to check where loc column is 0
 
         # Log detailed information about the validation result
         if not cond_ent:
@@ -142,16 +147,23 @@ def transform_censo_data(data):
             return None
 
         # Select necessary columns
-        tidy_data_censo = data[REQUIRED_COLUMNS].copy()  # Use .copy() to avoid SettingWithCopyWarning
+        data_censo = data[REQUIRED_COLUMNS].copy()  # Use .copy() to avoid SettingWithCopyWarning
 
         # Rename columns for consistency
-        tidy_data_censo.rename(columns={
+        data_censo.rename(columns={
             "ENTIDAD": 'ent',
             "MUN": "mun",
             'LOC': 'loc',
             'POBTOT': 'pob_tot',
             'REL_H_M': 'rel_h_m'
         }, inplace=True)
+        
+        # Transform to tidy
+        data_censo=data_censo[data_censo['loc'] == 0].drop(index=0).reset_index(drop=True) # Only those with aggregated population
+        data_censo['cvegeo']=data_censo['ent'].astype(str).str.zfill(2)+data_censo['mun'].astype(str).str.zfill(3)
+        data_censo['cvegeo'] = data_censo['cvegeo'].apply(lambda x: str(x)[:2] if str(x).endswith('000') else str(x))
+        data_censo.drop(columns=['ent', 'mun', 'loc'], errors='ignore', inplace=True)
+        tidy_data_censo=data_censo[['cvegeo','pob_tot','rel_h_m']] # desired order 
 
         logging.info(f"Transformed data shape: {tidy_data_censo.shape}")
         return tidy_data_censo
@@ -192,22 +204,33 @@ def create_metadata(output_path, raw_data_path):
         logging.error(f"Error creating metadata: {e}")
 
 if __name__ == "__main__":
-    output_file_path = os.path.join(interim_data_path_censo, "censo_tidy_data.csv")
+    raw_file_path = os.path.join(data_paths['censo']['raw'], "iter_00_cpv2020",'conjunto_de_datos')
+    output_file_path_ent = os.path.join(interim_data_path_censo, "censo_ent_tidy_data.csv")
+    output_file_path_mun = os.path.join(interim_data_path_censo, "censo_mun_tidy_data.csv")
 
     # Load raw data
-    raw_data = load_raw_censo(data_paths['censo']['raw'])
+    raw_data = load_raw_censo(raw_file_path)
 
     if raw_data is not None:
         # Validate data
         if validate_data(raw_data):
             # Transform data
-            tidy_data = transform_censo_data(raw_data)
+            inter_data = transform_censo_data(raw_data)
+            tidy_data_ent= inter_data[inter_data['cvegeo'].str.len() == 2].copy()
+            tidy_data_mun= inter_data[inter_data['cvegeo'].str.len() == 5].copy()
 
-            if tidy_data is not None:
+            if tidy_data_ent is not None:
                 # Save tidy data
-                save_tidy_data_censo(tidy_data, output_file_path)
+                save_tidy_data_censo(tidy_data_ent, output_file_path_ent)
 
                 # Create metadata
-                create_metadata(output_file_path, data_paths['censo']['raw'])
+                create_metadata(output_file_path_ent, raw_file_path)
+
+            if tidy_data_mun is not None:
+                # Save tidy data
+                save_tidy_data_censo(tidy_data_mun, output_file_path_mun)
+
+                # Create metadata
+                create_metadata(output_file_path_mun, raw_file_path)
 
     logging.info("CENSO data transformation process completed.")
