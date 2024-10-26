@@ -9,24 +9,27 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")
 sys.path.append(project_root)
 
 # Import configurations
-from modules.config import raw_data_path_ageb, interim_data_path_ageb, logs_folder
+from modules.config import data_paths, LOGS_FOLDER
 
 # Ensure the logs and metadata directories exist
-os.makedirs(logs_folder, exist_ok=True)
+os.makedirs(LOGS_FOLDER, exist_ok=True)
 
 # Setup logging configuration
-log_filename = os.path.join(logs_folder, f"data_ageb_transform_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+log_filename = os.path.join(LOGS_FOLDER, f"data_censo_transform_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
 logging.basicConfig(filename=log_filename, level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s', filemode='w')
 
 # Columns to select
-REQUIRED_COLUMNS = ["ENTIDAD", 'MUN', 'NOM_LOC', 'AGEB', 'POBTOT']
+REQUIRED_COLUMNS = [
+    "ENTIDAD",'MUN','POBTOT','REL_H_M' 
+]
 
-def load_raw_ageb(file_path):
-    """Load raw AGEB data from a directory containing multiple CSV files."""
+def load_raw_censo(file_path):
+    """Load raw CENSO data from a directory containing multiple CSV files."""
+   
     try:
-        df_ageb = pd.DataFrame()
-        logging.info(f"Loading raw AGEB data from {file_path}...")
+        df_censo = pd.DataFrame()
+        logging.info(f"Loading raw CENSO data from {file_path}...")
 
         # Get all CSV files in the directory
         csv_files = [f for f in os.listdir(file_path) if f.endswith('.csv')]
@@ -39,27 +42,25 @@ def load_raw_ageb(file_path):
         for csv_file in csv_files:
             file_path_full = os.path.join(file_path, csv_file)
             logging.info(f"Loading {csv_file}...")
-
             # Load CSV into DataFrame
             try:
-                df = pd.read_csv(file_path_full, encoding='latin-1', dtype={6: str})
+                df_censo = pd.read_csv(file_path_full, encoding='latin-1', dtype={6: str})
                 # Fix encoding issues on the first column header
-                df.columns = ['ENTIDAD' if col == '﻿ENTIDAD' else col for col in df.columns]
-                df_ageb = pd.concat([df_ageb, df], ignore_index=True)  # Concatenate each CSV
-                logging.info(f"Loaded {csv_file} successfully, current shape: {df_ageb.shape}")
+                df_censo.columns = ['ENTIDAD' if col == 'ï»¿ENTIDAD' else col for col in df_censo.columns]
+                logging.info(f"Loaded {csv_file} successfully, current shape: {df_censo.shape}")
             except Exception as e:
                 logging.error(f"Error loading {csv_file}: {e}")
 
-        logging.info(f"All AGEB files loaded successfully. Final shape: {df_ageb.shape}")
-        return df_ageb
+        logging.info(f"All CENSO files loaded successfully. Final shape: {df_censo.shape}")
+        return df_censo
     except Exception as e:
         logging.error(f"Error loading data from {file_path}: {e}")
         return None
 
 def validate_data(data):
-    """Validate the AGEB dataset to ensure it is tidy."""
+    """Validate the CENSO dataset to ensure it is tidy."""
     try:
-        logging.info("Validating AGEB data...")
+        logging.info("Validating CENSO data...")
 
         # Check if required columns are present
         missing_columns = [col for col in REQUIRED_COLUMNS if col not in data.columns]
@@ -67,60 +68,54 @@ def validate_data(data):
             logging.error(f"Missing columns: {missing_columns}")
             return False
 
+        # 2. Check for missing values in key columns
+        if data[REQUIRED_COLUMNS].isnull().any().any():
+            logging.warning("Missing values detected in key columns.")
+            # Optional: Decide whether to drop or fill missing values
+            data = data.dropna(subset=REQUIRED_COLUMNS) # In this case, drop
+
         # Validation functions
         def validate_row_ent(entidad):
-            """Validate 'ENTIDAD' column: 2-digit string in range [00, 32]."""
-            if isinstance(entidad, str) and len(entidad) == 2:
-                try:
-                    val = int(entidad)
-                    return 0 <= val <= 32
-                except ValueError:
-                    return False
-            return False
-
+            """Validate 'ENT' column: integer value in range [0, 32]."""
+            return isinstance(entidad, int) and 0 <= entidad <= 32
+        
         def validate_row_mun(municipio):
-            """Validate 'MUN' column: 3-digit string in range [000, 570]."""
-            if isinstance(municipio, str) and len(municipio) == 3:
-                try:
-                    val = int(municipio)
-                    return 0 <= val <= 570
-                except ValueError:
-                    return False
-            return False
-
-        def validate_row_nom_loc(nom_loc):
-            """Validate 'NOM_LOC' column: string with alphanumeric values, max 50 characters."""
-            return isinstance(nom_loc, str) and len(nom_loc) <= 50
-
-        def validate_row_ageb(ageb):
-            """Validate 'AGEB' column: alphanumeric string, max 4 characters."""
-            return isinstance(ageb, str) and len(ageb) == 4
-
+            """Validate 'MUN' column: integer value in range [0, 570]."""
+            return isinstance(municipio, int) and 0 <= municipio <= 570
+        
         def validate_row_pob_tot(pobtot):
             """Validate 'POBTOT' column: integer value in range [0, 999999999]."""
             return isinstance(pobtot, int) and 0 <= pobtot <= 999999999
+        
+        def validate_row_loc(loc):
+            """Validate 'LOC' column: integer value in range [0, 9999]."""
+            return isinstance(loc, int) and 0 <= loc <= 9999
+        
+        def validate_row_rel_h_m(rel_h_m):
+            """Validate 'REL_H_M' column: integer value in range [0, 999999999]."""
+            return isinstance(rel_h_m, int) and 0 <= rel_h_m <= 999999999
 
         # Apply validation functions to each column
         cond_ent = data['ENTIDAD'].apply(validate_row_ent).all()
         cond_mun = data['MUN'].apply(validate_row_mun).all()
-        cond_nom_loc = data['NOM_LOC'].apply(validate_row_nom_loc).all()
-        cond_ageb = data['AGEB'].apply(validate_row_ageb).all()
+        cond_loc = data['LOC'].apply(validate_row_loc).all()
         cond_pob_tot = data['POBTOT'].apply(validate_row_pob_tot).all()
+        cond_rel_h_m = data['REL_H_M'].apply(validate_row_rel_h_m).all()
 
         # Log detailed information about the validation result
         if not cond_ent:
             logging.error("Validation failed: 'ENTIDAD' column has invalid values.")
         if not cond_mun:
             logging.error("Validation failed: 'MUN' column has invalid values.")
-        if not cond_nom_loc:
-            logging.error("Validation failed: 'NOM_LOC' column has invalid values.")
-        if not cond_ageb:
-            logging.error("Validation failed: 'AGEB' column has invalid values.")
+        if not cond_loc:
+            logging.error("Validation failed: 'LOC' column has invalid values.")
         if not cond_pob_tot:
             logging.error("Validation failed: 'POBTOT' column has invalid values.")
+        if not cond_rel_h_m:
+            logging.error("Validation failed: 'REL_H_M' column has invalid values.")
 
         # Check if all conditions are met
-        all_valid = cond_ent and cond_mun and cond_nom_loc and cond_ageb and cond_pob_tot
+        all_valid = cond_ent and cond_mun and cond_loc and cond_pob_tot and cond_rel_h_m
 
         if all_valid:
             logging.info("Data validation passed.")
@@ -133,10 +128,10 @@ def validate_data(data):
         return False
 
 
-def transform_ageb_data(data):
+def transform_censo_data(data):
     """Select necessary columns and create tidy dataset."""
     try:
-        logging.info("Transforming AGEB data...")
+        logging.info("Transforming CENSO data...")
 
         # Check if all required columns exist in the data
         missing_columns = [col for col in REQUIRED_COLUMNS if col not in data.columns]
@@ -145,19 +140,19 @@ def transform_ageb_data(data):
             return None
 
         # Select necessary columns
-        tidy_data_ageb = data[REQUIRED_COLUMNS].copy()  # Use .copy() to avoid SettingWithCopyWarning
+        tidy_data_censo = data[REQUIRED_COLUMNS].copy()  # Use .copy() to avoid SettingWithCopyWarning
 
         # Rename columns for consistency
-        tidy_data_ageb.rename(columns={
+        tidy_data_censo.rename(columns={
             "ENTIDAD": 'ent',
             "MUN": "mun",
-            'NOM_LOC': 'nom_loc',
-            'AGEB': 'ageb',
-            'POBTOT': 'pob_tot'
+            'LOC': 'loc',
+            'POBTOT': 'pob_tot',
+            'REL_H_M': 'rel_h_m'
         }, inplace=True)
 
-        logging.info(f"Transformed data shape: {tidy_data_ageb.shape}")
-        return tidy_data_ageb
+        logging.info(f"Transformed data shape: {tidy_data_censo.shape}")
+        return tidy_data_censo
     except KeyError as e:
         logging.error(f"Error transforming data: {e}")
         return None
@@ -165,7 +160,7 @@ def transform_ageb_data(data):
         logging.error(f"An unexpected error occurred: {e}")
         return None
 
-def save_tidy_data_ageb(data, output_path):
+def save_tidy_data_censo(data, output_path):
     """Save the transformed tidy data."""
     try:
         # Add a log to verify the save path
@@ -180,12 +175,12 @@ def save_tidy_data_ageb(data, output_path):
 def create_metadata(output_path, raw_data_path):
     """Create metadata for the processed data."""
     try:
-        metadata_file = os.path.abspath(os.path.join("data", "metadata", "ageb_transform_metadata.txt"))
+        metadata_file = os.path.abspath(os.path.join("data", "metadata", "censo_transform_metadata.txt"))
         logging.info(f"Attempting to create metadata file at {metadata_file}")
         
         os.makedirs(os.path.dirname(metadata_file), exist_ok=True)
         with open(metadata_file, 'w') as f:
-            f.write("Metadata for AGEB Data Transformation\n")
+            f.write("Metadata for CENSO Data Transformation\n")
             f.write(f"Source: {raw_data_path}\n")
             f.write(f"Transformation date: {datetime.now()}\n")
             f.write(f"Tidy data saved at: {output_path}\n")
@@ -195,22 +190,22 @@ def create_metadata(output_path, raw_data_path):
         logging.error(f"Error creating metadata: {e}")
 
 if __name__ == "__main__":
-    output_file_path = os.path.join(interim_data_path_ageb, "ageb_tidy_data.csv")
+    output_file_path = os.path.join(data_paths['censo']['interim'], "censo_tidy_data.csv")
 
     # Load raw data
-    raw_data = load_raw_ageb(raw_data_path_ageb)
+    raw_data = load_raw_censo(data_paths['censo']['raw'])
 
     if raw_data is not None:
         # Validate data
         if validate_data(raw_data):
             # Transform data
-            tidy_data = transform_ageb_data(raw_data)
+            tidy_data = transform_censo_data(raw_data)
 
             if tidy_data is not None:
                 # Save tidy data
-                save_tidy_data_ageb(tidy_data, output_file_path)
+                save_tidy_data_censo(tidy_data, output_file_path)
 
                 # Create metadata
-                create_metadata(output_file_path, raw_data_path_ageb)
+                create_metadata(output_file_path, data_paths['censo']['raw'])
 
-    logging.info("AGEB data transformation process completed.")
+    logging.info("CENSO data transformation process completed.")
