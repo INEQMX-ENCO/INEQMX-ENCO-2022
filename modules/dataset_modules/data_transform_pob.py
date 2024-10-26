@@ -25,7 +25,7 @@ logging.basicConfig(filename=log_filename, level=logging.INFO,
 
 # Columns to select
 REQUIRED_COLUMNS = [
-    "ENTIDAD",'MUN','POBTOT','POBFEM','POBMAS' 
+    "ENTIDAD",'MUN','POBTOT','REL_H_M' 
 ]
 
 def load_raw_pob(file_path):
@@ -61,7 +61,7 @@ def validate_data(data):
         data = data.dropna(subset=REQUIRED_COLUMNS)
     
     # 3. Checking the following columns in the dataframe given the data conditions
-    columns_to_check = ['POBTOT', 'POBFEM', 'POBMAS']
+    columns_to_check = ['POBTOT','REL_H_M']
     for col in columns_to_check:
         if col in data.columns:
             # Check if the column is not already of integer type
@@ -135,7 +135,7 @@ def transform_pob_data(data):
         # Select necessary columns
         tidy_data_pob = data[REQUIRED_COLUMNS].copy()  # Use .copy() to avoid SettingWithCopyWarning
         # Rename columns
-        tidy_data_pob.rename(columns={"ENTIDAD":'ent',"MUN": "mun",'POBTOT':'pob_tot','POBFEM':'pob_fem','POBMAS':'pob_mas'}, inplace=True)
+        tidy_data_pob.rename(columns={"ENTIDAD":'ent',"MUN": "mun",'POBTOT':'pob_tot','REL_H_M':'rel_h_m'}, inplace=True)
 
         logging.info(f"Transformed data shape: {tidy_data_pob.shape}")
         return tidy_data_pob
