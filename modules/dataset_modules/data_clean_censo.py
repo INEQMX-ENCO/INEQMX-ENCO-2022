@@ -163,6 +163,7 @@ def transform_censo_data(data):
         data_censo['cvegeo']=data_censo['ent'].astype(str).str.zfill(2)+data_censo['mun'].astype(str).str.zfill(3)
         data_censo['cvegeo'] = data_censo['cvegeo'].apply(lambda x: str(x)[:2] if str(x).endswith('000') else str(x))
         data_censo.drop(columns=['ent', 'mun', 'loc'], errors='ignore', inplace=True)
+        #data_censo['rel_h_m'] = data_censo['rel_h_m'].astype(float)
         tidy_data_censo=data_censo[['cvegeo','pob_tot','rel_h_m']] # desired order 
 
         logging.info(f"Transformed data shape: {tidy_data_censo.shape}")
@@ -207,6 +208,7 @@ if __name__ == "__main__":
     raw_file_path = os.path.join(data_paths['censo']['raw'], "iter_00_cpv2020",'conjunto_de_datos')
     output_file_path_ent = os.path.join(interim_data_path_censo, "censo_ent_tidy_data.csv")
     output_file_path_mun = os.path.join(interim_data_path_censo, "censo_mun_tidy_data.csv")
+    output_file_path = os.path.join(interim_data_path_censo, "censo_tidy_data.csv")
 
     # Load raw data
     raw_data = load_raw_censo(raw_file_path)
@@ -215,22 +217,25 @@ if __name__ == "__main__":
         # Validate data
         if validate_data(raw_data):
             # Transform data
-            inter_data = transform_censo_data(raw_data)
-            tidy_data_ent= inter_data[inter_data['cvegeo'].str.len() == 2].copy()
-            tidy_data_mun= inter_data[inter_data['cvegeo'].str.len() == 5].copy()
+            tidy_data = transform_censo_data(raw_data)
+            #tidy_data_ent= inter_data[inter_data['cvegeo'].str.len() == 2].copy()
+            #tidy_data_mun= inter_data[inter_data['cvegeo'].str.len() == 5].copy()
+            if tidy_data is not None:
+                save_tidy_data_censo(tidy_data, output_file_path)
+            #     # Create metadata
+                create_metadata(output_file_path, raw_file_path)
+            # if tidy_data_ent is not None:
+            #     # Save tidy data
+            #     save_tidy_data_censo(tidy_data_ent, output_file_path_ent)
 
-            if tidy_data_ent is not None:
-                # Save tidy data
-                save_tidy_data_censo(tidy_data_ent, output_file_path_ent)
+            #     # Create metadata
+            #     create_metadata(output_file_path_ent, raw_file_path)
 
-                # Create metadata
-                create_metadata(output_file_path_ent, raw_file_path)
+            # if tidy_data_mun is not None:
+            #     # Save tidy data
+            #     save_tidy_data_censo(tidy_data_mun, output_file_path_mun)
 
-            if tidy_data_mun is not None:
-                # Save tidy data
-                save_tidy_data_censo(tidy_data_mun, output_file_path_mun)
-
-                # Create metadata
-                create_metadata(output_file_path_mun, raw_file_path)
+            #     # Create metadata
+            #     create_metadata(output_file_path_mun, raw_file_path)
 
     logging.info("CENSO data transformation process completed.")
