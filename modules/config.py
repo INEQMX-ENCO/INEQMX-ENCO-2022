@@ -18,9 +18,9 @@ data_paths = {
             "interim": os.path.join(BASE_INTERIM_DATA_PATH, "enigh", str(year))
         } for year in [2018, 2020, 2022]
     },
-    "ageb": {
-        "raw": os.path.join(BASE_RAW_DATA_PATH, "ageb"),
-        "interim": os.path.join(BASE_INTERIM_DATA_PATH, "ageb")
+    "censo": {
+        "raw": os.path.join(BASE_RAW_DATA_PATH, "censo"),
+        "interim": os.path.join(BASE_INTERIM_DATA_PATH, "censo")
     },
     "shp": {
         "raw": os.path.join(BASE_RAW_DATA_PATH, "shp"),
@@ -56,7 +56,7 @@ years = {
 # Base URLs for datasets
 BASE_URL_ENCO = "https://www.inegi.org.mx/contenidos/programas/enco/datosabiertos/{year}/{filename}.zip"
 BASE_URL_ENIGH = "https://www.inegi.org.mx/contenidos/programas/enigh/nc"
-BASE_URL_AGEB = "https://www.inegi.org.mx/contenidos/programas/ccpv/iter/zip/resageburb20"
+BASE_URL_CENSO = "https://www.inegi.org.mx/contenidos/programas/ccpv/2020/datosabiertos/iter/iter_00_cpv2020_csv.zip"
 BASE_URL_SHP = "https://www.inegi.org.mx/contenidos/descargadenue/MGdescarga/MGN2020_1"
 
 # Download URLs by dataset and year
@@ -71,7 +71,7 @@ urls = {
         2020: f"{BASE_URL_ENIGH}/2020/datosabiertos/conjunto_de_datos_enigh_ns_2020_csv.zip",
         2022: f"{BASE_URL_ENIGH}/2022/datosabiertos/conjunto_de_datos_enigh_ns_2022_csv.zip"
     },
-    "ageb": [f"{BASE_URL_AGEB}/resageburb_{str(i).zfill(2)}csv20.zip" for i in range(1, 33)],
+    "censo": [f"{BASE_URL_CENSO}"],
     "shp": [f"{BASE_URL_SHP}/2020_1_00_{i}.zip" for i in ["ENT", "MUN"]]
 }
 

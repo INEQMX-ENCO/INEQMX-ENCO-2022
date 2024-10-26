@@ -113,7 +113,7 @@ def download_data():
     clean_directory(data_paths['enigh'][2018]['raw'], preserve_files=['.gitkeep'])
     clean_directory(data_paths['enigh'][2020]['raw'], preserve_files=['.gitkeep'])
     clean_directory(data_paths['enigh'][2022]['raw'], preserve_files=['.gitkeep'])
-    clean_directory(data_paths['ageb']['raw'], preserve_files=['.gitkeep'])
+    clean_directory(data_paths['censo']['raw'], preserve_files=['.gitkeep'])
     clean_directory(data_paths['shp']['raw'], preserve_files=['.gitkeep'])
 
     # Create necessary directories
@@ -121,7 +121,7 @@ def download_data():
     os.makedirs(data_paths['enigh'][2018]['raw'], exist_ok=True)
     os.makedirs(data_paths['enigh'][2020]['raw'], exist_ok=True)
     os.makedirs(data_paths['enigh'][2022]['raw'], exist_ok=True)
-    os.makedirs(data_paths['ageb']['raw'], exist_ok=True)
+    os.makedirs(data_paths['censo']['raw'], exist_ok=True)
     os.makedirs(data_paths['shp']['raw'], exist_ok=True)
 
     # Download ENCO datasets using the `years` dictionary
@@ -135,8 +135,8 @@ def download_data():
                 download_and_extract_zip(url, enco_path)
 
     with ThreadPoolExecutor(max_workers=4) as executor:
-        # Download AGEB datasets in parallel
-        executor.map(lambda url: download_and_extract_zip(url, data_paths['ageb']['raw']), urls['ageb'])
+        # Download CENSO datasets in parallel
+        executor.map(lambda url: download_and_extract_zip(url, data_paths['censo']['raw']), urls['censo'])
 
         # Download SHP datasets in parallel
         executor.map(lambda url: download_and_extract_zip(url, data_paths['shp']['raw']), urls['shp'])
@@ -190,7 +190,7 @@ def create_metadata():
         else:
             f.write("No files or directories found in the ENCO folder.\n")
 
-        # Similar structure for ENIGH, AGEB, and SHP datasets
+        # ENIGH Metadata for 2022
         f.write("\nSource: ENIGH 2022\n")
         f.write(f"URL: {urls['enigh'][2022]}\n")
         enigh_info = list_files_and_folders(data_paths['enigh'][2022]['raw'])
@@ -199,9 +199,30 @@ def create_metadata():
                 f.write(f"{info}\n")
         else:
             f.write("No files or directories found in the ENIGH folder.\n")
+        
+        # CENSO Metadata for 2020
+        f.write("Source: INEGI 2020\n")
+        f.write(f"URLs: {', '.join(urls['censo'])}\n")
+        f.write(f"Download date: {datetime.now()}\n")
+        f.write("Description: Population and Housing Census for the year 2020.\n")
+        censo_info = list_files_and_folders(data_paths['censo']['raw'])
+        if censo_info:
+            for info in censo_info:
+                f.write(f"{info}\n")
+        else:
+            f.write("No files or directories found in the CENSO folder.\n")
 
-        # AGEB and SHP metadata similarly...
-
+        # SHP Metadata for 2020
+        f.write("Source: INEGI 2020\n")
+        f.write(f"URLs: {', '.join(urls['shp'])}\n")
+        f.write(f"Download date: {datetime.now()}\n")
+        f.write("Description: Shapefile of mexico by entity and municipality for the year 2020.\n")
+        shp_info = list_files_and_folders(data_paths['shp']['raw'])
+        if shp_info:
+            for info in shp_info:
+                f.write(f"{info}\n")
+        else:
+            f.write("No files or directories found in the SHP folder.\n")
 
 # Main script execution
 if __name__ == "__main__":

@@ -11,13 +11,15 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")
 sys.path.append(project_root)
 
 # Import configurations
-from modules.config import raw_data_path_shp, interim_data_path_shp, logs_folder
+from modules.config import data_paths, LOGS_FOLDER
 
-# Ensure the logs and metadata directories exist
-os.makedirs(logs_folder, exist_ok=True)
+# Ensure interim data path and logs directory exist
+interim_data_path_shp = data_paths["shp"]["interim"]
+os.makedirs(interim_data_path_shp, exist_ok=True)
+os.makedirs(LOGS_FOLDER, exist_ok=True)
 
 # Setup logging configuration
-log_filename = os.path.join(logs_folder, f"data_shp_transform_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
+log_filename = os.path.join(LOGS_FOLDER, f"data_shp_transform_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
 logging.basicConfig(filename=log_filename, level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s', filemode='w')
 
@@ -60,11 +62,8 @@ def transform_shp_data(data):
     """Select necessary columns and create tidy dataset."""
     try:
         logging.info("Transforming SHP data...")
-        if data.shape[1] == 5:
-            REQUIRED_COLUMNS = ['CVEGEO', 'CVE_ENT', 'CVE_MUN', 'NOMGEO', 'geometry']
-        else:
-            REQUIRED_COLUMNS = ['CVEGEO', 'CVE_ENT', 'NOMGEO', 'geometry']
-
+        REQUIRED_COLUMNS = ['CVEGEO', 'NOMGEO', 'geometry']
+        
         # Check if all required columns exist in the data
         missing_columns = [col for col in REQUIRED_COLUMNS if col not in data.columns]
         if missing_columns:
@@ -75,9 +74,7 @@ def transform_shp_data(data):
         tidy_data_shp = data[REQUIRED_COLUMNS].copy()  # Use .copy() to avoid SettingWithCopyWarning
 
         # Rename columns
-        tidy_data_shp.rename(columns={"CVEGEO": 'cvegeo', "CVE_ENT": "cve_ent", 'NOMGEO': 'nom_geo', 'geometry': 'geo'}, inplace=True)
-        if 'CVE_MUN' in tidy_data_shp.columns:
-            tidy_data_shp.rename(columns={"CVE_MUN": "cve_mun"}, inplace=True)
+        tidy_data_shp.rename(columns={"CVEGEO": 'cvegeo', 'NOMGEO': 'nom_geo', 'geometry': 'geo'}, inplace=True)
 
         logging.info(f"Transformed data shape: {tidy_data_shp.shape}")
         return tidy_data_shp
@@ -149,23 +146,28 @@ def create_metadata(output_path, raw_data_path):
         logging.error(f"Error creating metadata: {e}")
 
 if __name__ == "__main__":
-    output_file_path = os.path.join(interim_data_path_shp, "shp_tidy_data.csv")
-
+    output_file_path_ent = os.path.join(interim_data_path_shp, "shp_ent_tidy_data.csv")
+    output_file_path_mun = os.path.join(interim_data_path_shp, "shp_mun_tidy_data.csv")
+    raw_path = data_paths['shp']['raw']
+    
     # Load raw data
-    raw_data_ent, raw_data_mun = load_raw_shp(raw_data_path_shp)
+    raw_data_ent, raw_data_mun = load_raw_shp(raw_path)
     
     tidy_data_ent = None
     tidy_data_mun = None
 
     if raw_data_ent is not None and validate_data(raw_data_ent):
         tidy_data_ent = transform_shp_data(raw_data_ent)
-
+    
+    if tidy_data_ent is not None:
+        save_tidy_data_shp(tidy_data_ent, output_file_path_ent)
+        create_metadata(output_file_path_ent, raw_path)
+    
     if raw_data_mun is not None and validate_data(raw_data_mun):
         tidy_data_mun = transform_shp_data(raw_data_mun)
     
-    if tidy_data_ent is not None or tidy_data_mun is not None:
-        tidy_data = pd.concat([tidy_data_ent, tidy_data_mun], ignore_index=True)
-        save_tidy_data_shp(tidy_data, output_file_path)
-        create_metadata(output_file_path, raw_data_path_shp)
+    if tidy_data_ent is not None:
+        save_tidy_data_shp(tidy_data_mun, output_file_path_mun)
+        create_metadata(output_file_path_mun, raw_path)
 
     logging.info("SHP data transformation process completed.")
