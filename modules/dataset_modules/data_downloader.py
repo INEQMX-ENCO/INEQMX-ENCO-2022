@@ -14,7 +14,10 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")
 sys.path.append(project_root)
 
 # Import entire dictionaries from config
-from modules.config import data_paths, urls, years, BASE_URL_ENCO
+from modules.config import data_paths, urls, years, BASE_URL_ENCO, LOGS_FOLDER
+
+# Ensure logs directory exist
+os.makedirs(LOGS_FOLDER, exist_ok=True)
 
 # Setup logging configuration
 logging.basicConfig(filename=f"logs/data_downloader_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log", level=logging.INFO,
