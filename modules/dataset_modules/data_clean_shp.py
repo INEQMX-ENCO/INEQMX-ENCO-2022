@@ -11,10 +11,12 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")
 sys.path.append(project_root)
 
 # Import configurations
-from modules.config import raw_data_path_shp, interim_data_path_shp, logs_folder
+from modules.config import data_paths, LOGS_FOLDER
 
-# Ensure the logs and metadata directories exist
-os.makedirs(logs_folder, exist_ok=True)
+# Ensure interim data path and logs directory exist
+interim_data_path_shp = data_paths["shp"]["interim"]
+os.makedirs(interim_data_path_shp, exist_ok=True)
+os.makedirs(LOGS_FOLDER, exist_ok=True)
 
 # Setup logging configuration
 log_filename = os.path.join(logs_folder, f"data_shp_transform_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log")
@@ -152,7 +154,7 @@ if __name__ == "__main__":
     output_file_path = os.path.join(interim_data_path_shp, "shp_tidy_data.csv")
 
     # Load raw data
-    raw_data_ent, raw_data_mun = load_raw_shp(raw_data_path_shp)
+    raw_data_ent, raw_data_mun = load_raw_shp(data_paths['shp']['raw'])
     
     tidy_data_ent = None
     tidy_data_mun = None
@@ -166,6 +168,6 @@ if __name__ == "__main__":
     if tidy_data_ent is not None or tidy_data_mun is not None:
         tidy_data = pd.concat([tidy_data_ent, tidy_data_mun], ignore_index=True)
         save_tidy_data_shp(tidy_data, output_file_path)
-        create_metadata(output_file_path, raw_data_path_shp)
+        create_metadata(output_file_path, data_paths['shp']['raw'])
 
     logging.info("SHP data transformation process completed.")

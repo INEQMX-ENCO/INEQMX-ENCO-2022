@@ -11,7 +11,9 @@ sys.path.append(project_root)
 # Import configurations
 from modules.config import data_paths, LOGS_FOLDER
 
-# Ensure the logs and metadata directories exist
+# Ensure interim data path and logs directory exist
+interim_data_path_censo = data_paths["censo"]["interim"]
+os.makedirs(interim_data_path_censo, exist_ok=True)
 os.makedirs(LOGS_FOLDER, exist_ok=True)
 
 # Setup logging configuration
@@ -190,7 +192,7 @@ def create_metadata(output_path, raw_data_path):
         logging.error(f"Error creating metadata: {e}")
 
 if __name__ == "__main__":
-    output_file_path = os.path.join(data_paths['censo']['interim'], "censo_tidy_data.csv")
+    output_file_path = os.path.join(interim_data_path_censo, "censo_tidy_data.csv")
 
     # Load raw data
     raw_data = load_raw_censo(data_paths['censo']['raw'])
