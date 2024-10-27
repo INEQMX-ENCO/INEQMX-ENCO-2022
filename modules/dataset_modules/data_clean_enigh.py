@@ -3,15 +3,19 @@ import sys
 import pandas as pd
 import logging
 from datetime import datetime
+import numpy as np
 
 # Add the project root directory to the Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 sys.path.append(project_root)
 
 # Import configurations
-from modules.config import raw_data_path_enigh, interim_data_path_enigh, logs_folder
+from modules.config import data_paths, LOGS_FOLDER
 
-# Ensure the logs and metadata directories exist
+# Set logs folder path
+logs_folder = LOGS_FOLDER
+
+# Ensure the logs directory exists
 os.makedirs(logs_folder, exist_ok=True)
 
 # Setup logging configuration
@@ -27,6 +31,28 @@ REQUIRED_COLUMNS = [
     "estim_alqu", "otros_ing", "factor", "upm", "est_dis"
 ]
 
+# Specific file paths for each year based on the different directory structures
+file_paths_by_year = {
+    2018: os.path.join(
+        data_paths["enigh"][2018]["raw"], 
+        "conjunto_de_datos_concentradohogar_enigh_2018_ns", 
+        "conjunto_de_datos",
+        "conjunto_de_datos_concentradohogar_enigh_2018_ns.csv"
+    ),
+    2020: os.path.join(
+        data_paths["enigh"][2020]["raw"], 
+        "conjunto_de_datos_concentradohogar_enigh_2020_ns", 
+        "conjunto_de_datos",
+        "conjunto_de_datos_concentradohogar_enigh_2020_ns.csv"
+    ),
+    2022: os.path.join(
+        data_paths["enigh"][2022]["raw"], 
+        "conjunto_de_datos_concentradohogar_enigh2022_ns", 
+        "conjunto_de_datos",
+        "conjunto_de_datos_concentradohogar_enigh2022_ns.csv"
+    )
+}
+
 def load_raw_enigh_data(file_path):
     """Load raw ENIGH data."""
     try:
@@ -38,48 +64,73 @@ def load_raw_enigh_data(file_path):
         logging.error(f"Error loading data from {file_path}: {e}")
         return None
 
-def validate_data(data):
-    """Validate the ENIGH dataset to ensure it is tidy."""
-    # 1. Check if required columns are present
-    missing_columns = [col for col in REQUIRED_COLUMNS if col not in data.columns]
-    if missing_columns:
-        logging.error(f"Missing columns: {missing_columns}")
+def validate_raw_data(df):
+    """Validation steps for raw data before transformation."""
+    errors = []
+    
+    # Check for missing values in key columns before transformation
+    key_columns = ["folioviv", "foliohog", "ubica_geo", "ing_cor"]
+    missing_values = df[key_columns].isnull().any()
+    if missing_values.any():
+        errors.append(f"Error: Missing values found in columns: {missing_values[missing_values].index.tolist()}")
+    
+    # Ensure income columns are non-negative in raw data
+    income_columns = ["ing_cor", "ingtrab", "trabajo", "negocio", "otros_trab", 
+                      "rentas", "utilidad", "arrenda", "transfer", "jubilacion", 
+                      "becas", "donativos", "remesas", "bene_gob", "transf_hog", 
+                      "trans_inst", "estim_alqu", "otros_ing"]
+    if (df[income_columns] < 0).any().any():
+        errors.append("Error: Negative values found in income columns.")
+    
+    # Output results of validation for raw data
+    if errors:
+        for error in errors:
+            print(error)
         return False
+    else:
+        print("Raw data validations passed successfully.")
+        return True
 
-    # 2. Check for missing values in key columns
-    if data[REQUIRED_COLUMNS].isnull().any().any():
-        logging.warning("Missing values detected in key columns.")
-        # Optional: Decide whether to drop or fill missing values
-        data = data.dropna(subset=REQUIRED_COLUMNS)
 
-    # 3. Check for duplicate household records
-    if data.duplicated(subset=["folioviv", "foliohog"]).any():
-        logging.error("Duplicate households found based on folioviv and foliohog.")
+def validate_transformed_data(df):
+    """Validation steps for transformed data with 'entidad' and 'municipio'."""
+    errors = []
+    
+    # 1. Validate 'entidad' values (should be between 1 and 32)
+    if not df['entidad'].between(1, 32).all():
+        errors.append("Error: 'entidad' column contains values outside the range 1-32.")
+    
+    # 2. Validate 'municipio' values (should be three digits)
+    if not df['municipio'].apply(lambda x: len(str(x)) == 3).all():
+        errors.append("Error: 'municipio' column contains values that are not three digits.")
+    
+    # 3. Validate 'factor' column to be positive
+    if not (df['factor'] > 0).all():
+        errors.append("Error: 'factor' column contains non-positive values.")
+    
+    # 4. Check for unrealistic high income values (setting a threshold, e.g., 10^6)
+    unrealistic_threshold = 1_000_000
+    income_columns = ["ing_cor", "ingtrab", "trabajo", "negocio", "otros_trab", 
+                      "rentas", "utilidad", "arrenda", "transfer", "jubilacion", 
+                      "becas", "donativos", "remesas", "bene_gob", "transf_hog", 
+                      "trans_inst", "estim_alqu", "otros_ing"]
+    if (df[income_columns] > unrealistic_threshold).any().any():
+        errors.append(f"Warning: Income columns contain values above {unrealistic_threshold}.")
+    
+    # Output results of validation for transformed data
+    if errors:
+        for error in errors:
+            print(error)
         return False
-
-    # 4. Check for negative values in income columns
-    income_columns = [col for col in REQUIRED_COLUMNS if "ing" in col]
-    if (data[income_columns] < 0).any().any():
-        logging.error("Negative income values detected.")
-        return False
-
-    # 5. Check if the weight (factor) column contains non-negative values
-    if (data["factor"] < 0).any():
-        logging.error("Negative values found in 'factor' column.")
-        return False
-
-    # 6. Check for unrealistic values in income columns
-    unrealistic_threshold = 10**6  # Adjust based on your knowledge of the dataset
-    if (data["ing_cor"] > unrealistic_threshold).any():
-        logging.warning("Unrealistically high income values detected.")
-
-    return True
+    else:
+        print("Transformed data validations passed successfully.")
+        return True
 
 def transform_enigh_data(data):
-    """Select necessary columns and create tidy dataset."""
+    """Transform ENIGH data to create a tidy dataset."""
     try:
         logging.info("Transforming ENIGH data...")
-
+        
         # Check if all required columns exist in the data
         missing_columns = [col for col in REQUIRED_COLUMNS if col not in data.columns]
         if missing_columns:
@@ -90,13 +141,14 @@ def transform_enigh_data(data):
         tidy_data = data[REQUIRED_COLUMNS].copy()  # Use .copy() to avoid SettingWithCopyWarning
 
         # Ensure 'ubica_geo' is explicitly converted to a string
-        tidy_data.loc[:, 'ubica_geo'] = tidy_data['ubica_geo'].astype(str)
+        tidy_data['ubica_geo'] = tidy_data['ubica_geo'].astype(str)
 
-        # Add derived columns: entidad (first 2 digits) and municipio (next 3 digits)
-        tidy_data.loc[:, 'entidad'] = tidy_data['ubica_geo'].str[:2]  # Extract entity (state code)
-        tidy_data.loc[:, 'municipio'] = tidy_data['ubica_geo'].str[2:5]  # Extract municipality code
-
-        tidy_data.loc[:, 'Nhog'] = 1  # Add household flag
+        # Extract 'entidad' as an integer and 'municipio' as a three-digit string
+        tidy_data['entidad'] = tidy_data['ubica_geo'].apply(lambda x: int(x[:-3]))
+        tidy_data['municipio'] = tidy_data['ubica_geo'].apply(lambda x: x[-3:].zfill(3))  # Pad to ensure three digits
+        
+        # Add a household flag for counting purposes
+        tidy_data['Nhog'] = 1
 
         # Sort data by income and household IDs
         tidy_data = tidy_data.sort_values(by=["ing_cor", "folioviv", "foliohog"])
@@ -119,16 +171,17 @@ def save_tidy_data(data, output_path):
     except Exception as e:
         logging.error(f"Error saving tidy data: {e}")
 
-def create_metadata(output_path, raw_data_path):
+def create_metadata(output_path, raw_data_path, year):
     """Create metadata for the processed data."""
-    metadata_file = os.path.abspath(os.path.join("data", "metadata", "enigh_transform_metadata.txt"))
+    metadata_file = os.path.abspath(os.path.join("data", "metadata", f"enigh_clean_metadata_{year}.txt"))
     with open(metadata_file, 'w') as f:
         f.write("Metadata for ENIGH Data Transformation\n")
+        f.write(f"Year: {year}\n")
         f.write(f"Source: {raw_data_path}\n")
         f.write(f"Transformation date: {datetime.now()}\n")
         f.write(f"Tidy data saved at: {output_path}\n")
         f.write(f"Selected columns: {', '.join(REQUIRED_COLUMNS)}\n")
-        logging.info(f"Metadata generated at {metadata_file}")
+    logging.info(f"Metadata generated at {metadata_file}")
 
 def generate_summary_statistics(data):
     """Generate summary statistics for validation."""
@@ -138,27 +191,142 @@ def generate_summary_statistics(data):
     except Exception as e:
         logging.error(f"Error generating summary statistics: {e}")
 
-if __name__ == "__main__":
-    raw_file_path = os.path.join(raw_data_path_enigh, r"conjunto_de_datos_concentradohogar_enigh2022_ns\conjunto_de_datos\conjunto_de_datos_concentradohogar_enigh2022_ns.csv")  # Adjust based on actual raw file name
-    output_file_path = os.path.join(interim_data_path_enigh, "enigh_tidy_data.csv")
-
-    # Load raw data
-    raw_data = load_raw_enigh_data(raw_file_path)
+# Function to calculate Gini coefficient
+def calculate_gini(array, weights=None):
+    """Calculate Gini coefficient with optional weighting."""
+    array = np.asarray(array)
+    if weights is None:
+        weights = np.ones(len(array))
+    weights = np.asarray(weights)
     
-    if raw_data is not None:
-        # Validate data
-        if validate_data(raw_data):
-            # Transform data
+    sorted_indices = np.argsort(array)
+    sorted_array = array[sorted_indices]
+    sorted_weights = weights[sorted_indices]
+    
+    cum_weights = np.cumsum(sorted_weights)
+    cum_values = np.cumsum(sorted_array * sorted_weights)
+    
+    total_weights = cum_weights[-1]
+    total_values = cum_values[-1]
+    cum_weights = cum_weights / total_weights
+    cum_values = cum_values / total_values
+    
+    gini_index = 1 - 2 * np.sum(cum_values * (cum_weights[1:] - cum_weights[:-1]))
+    return gini_index
+
+def calculate_deciles(data):
+    """Calculate income deciles based on weighted household data."""
+    data = data.sort_values(by='ing_cor')
+    data['cum_factor'] = data['factor'].cumsum()
+    
+    total_households = data['factor'].sum()
+    decile_size = total_households // 10
+
+    # Assign deciles based on cumulative factor weight
+    data['decile'] = pd.cut(data['cum_factor'], bins=[0] + [decile_size * i for i in range(1, 11)] + [total_households],
+                            labels=list(range(1, 11)), right=False)
+    
+    # Calculate weighted average income for each decile
+    decile_averages = data.groupby('decile').apply(lambda x: np.average(x['ing_cor'], weights=x['factor']))
+    decile_averages = decile_averages.rename('average_income')
+    
+    summary_table = pd.DataFrame({
+        'decile': range(1, 11),
+        'average_income': decile_averages.values
+    })
+    
+    return summary_table
+
+# Function to calculate Gini coefficient
+def calculate_gini(array, weights=None):
+    array = np.asarray(array)
+    if weights is None:
+        weights = np.ones(len(array))
+    weights = np.asarray(weights)
+    
+    sorted_indices = np.argsort(array)
+    sorted_array = array[sorted_indices]
+    sorted_weights = weights[sorted_indices]
+    
+    cum_weights = np.cumsum(sorted_weights)
+    cum_values = np.cumsum(sorted_array * sorted_weights)
+    
+    total_weights = cum_weights[-1]
+    total_values = cum_values[-1]
+    cum_weights = cum_weights / total_weights
+    cum_values = cum_values / total_values
+    
+    gini_index = 1 - 2 * np.sum(cum_values * (cum_weights[1:] - cum_weights[:-1]))
+    return gini_index
+
+def add_gini_and_deciles(data):
+    """Add Gini coefficient and decile within each entidad and year."""
+    
+    def process_group(group):
+        # Calculate Gini coefficient for the group
+        gini_coef = calculate_gini(group['ing_cor'], weights=group['factor'])
+        group['gini_entidad_year'] = gini_coef
+
+        # Sort by income and assign deciles based on cumulative factor weight
+        group = group.sort_values(by='ing_cor')
+        group['cum_factor'] = group['factor'].cumsum()
+        
+        # Determine decile size based on total factor
+        total_factor = group['factor'].sum()
+        decile_size = total_factor / 10
+
+        # Assign deciles based on cumulative factor weight
+        group['decile'] = pd.cut(group['cum_factor'], 
+                                 bins=[0] + [decile_size * i for i in range(1, 11)] + [total_factor],
+                                 labels=list(range(1, 11)), 
+                                 right=False)
+        
+        return group
+
+    # Apply the process_group function to each entidad and year group
+    data = data.groupby(['entidad', 'year'], group_keys=False).apply(process_group)
+    
+    # Ensure the decile column is numeric
+    data['decile'] = data['decile'].astype(int)
+    
+    return data
+
+# Main script
+if __name__ == "__main__":
+    combined_data = []
+
+    for year in [2018, 2020, 2022]:
+        raw_data_path = file_paths_by_year[year]
+        interim_data_path = data_paths["enigh"][year]["interim"]
+
+        raw_data = load_raw_enigh_data(raw_data_path)
+        
+        if raw_data is not None and validate_raw_data(raw_data):
             tidy_data = transform_enigh_data(raw_data)
             
-            if tidy_data is not None:
-                # Save tidy data
+            if tidy_data is not None and validate_transformed_data(tidy_data):
+                output_file_path = os.path.join(interim_data_path, f"enigh_tidy_data_{year}.csv")
                 save_tidy_data(tidy_data, output_file_path)
                 
-                # Create metadata
-                create_metadata(output_file_path, raw_file_path)
+                tidy_data['year'] = year
+                combined_data.append(tidy_data)
                 
-                # Generate summary statistics for validation
+                create_metadata(output_file_path, raw_data_path, year)
                 generate_summary_statistics(tidy_data)
+    
+    combined_output_path = os.path.join(data_paths["enigh"][2018]["interim"].rsplit("\\", 1)[0], "enigh_tidy_data_combined.csv")
+    
+    if combined_data:
+        combined_df = pd.concat(combined_data, ignore_index=True)
+        save_tidy_data(combined_df, combined_output_path)
+        create_metadata(combined_output_path, "Combined ENIGH Data", "All Years")
+        generate_summary_statistics(combined_df)
 
-    logging.info("ENIGH data transformation process completed.")
+        # Add Gini coefficient and decile data per entidad and year
+        combined_df = add_gini_and_deciles(combined_df)
+        
+        # Save the updated combined data with Gini and decile information
+        gini_decile_output_path = os.path.join(data_paths["enigh"][2018]["interim"].rsplit("\\", 1)[0], "enigh_tidy_data_combined_with_gini_deciles.csv")
+        save_tidy_data(combined_df, gini_decile_output_path)
+
+    logging.info("ENIGH data transformation process completed for all years with Gini and decile data.")
