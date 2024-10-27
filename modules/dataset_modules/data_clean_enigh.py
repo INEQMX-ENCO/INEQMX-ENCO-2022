@@ -291,9 +291,8 @@ def add_gini_and_deciles(data):
     
     return data
 
-# Main script
 if __name__ == "__main__":
-    combined_data = []
+    combined_data = []  # Ensure this is only initialized once here
 
     for year in [2018, 2020, 2022]:
         raw_data_path = file_paths_by_year[year]
@@ -308,25 +307,50 @@ if __name__ == "__main__":
                 output_file_path = os.path.join(interim_data_path, f"enigh_tidy_data_{year}.csv")
                 save_tidy_data(tidy_data, output_file_path)
                 
-                tidy_data['year'] = year
-                combined_data.append(tidy_data)
-                
+                # Check 'tidy_data' shape and ensure it's not empty before appending
+                logging.info(f"Preparing to append transformed data for year {year} with shape: {tidy_data.shape}")
+                if tidy_data.empty:
+                    logging.error(f"tidy_data for year {year} is empty, not appending.")
+                else:
+                    tidy_data['year'] = year
+                    combined_data += [tidy_data]  # Use `+=` to explicitly add `tidy_data` as a list item
+                    
+                    # Log the combined_data length after each append
+                    logging.info(f"Appended transformed data for year {year}. Current combined_data length: {len(combined_data)}")
+
                 create_metadata(output_file_path, raw_data_path, year)
                 generate_summary_statistics(tidy_data)
     
-    combined_output_path = os.path.join(data_paths["enigh"][2018]["interim"].rsplit("\\", 1)[0], "enigh_tidy_data_combined.csv")
-    
+    # Check if combined_data has been populated before concatenating
     if combined_data:
         combined_df = pd.concat(combined_data, ignore_index=True)
+        logging.info(f"Combined data shape after concatenation: {combined_df.shape}")
+        
+        combined_output_path = os.path.join(data_paths["enigh"][2018]["interim"].rsplit("\\", 1)[0], "enigh_tidy_data_combined.csv")
         save_tidy_data(combined_df, combined_output_path)
         create_metadata(combined_output_path, "Combined ENIGH Data", "All Years")
         generate_summary_statistics(combined_df)
 
+        # Check columns before adding Gini and deciles
+        logging.info(f"Columns before Gini and deciles: {combined_df.columns.tolist()}")
+
         # Add Gini coefficient and decile data per entidad and year
         combined_df = add_gini_and_deciles(combined_df)
         
-        # Save the updated combined data with Gini and decile information
+        # Check columns after adding Gini and deciles
+        logging.info(f"Columns after adding Gini and deciles: {combined_df.columns.tolist()}")
+
+        # Confirm that Gini and decile columns are added
+        if 'gini_entidad_year' in combined_df.columns and 'decile' in combined_df.columns:
+            logging.info("Gini and decile columns successfully added to the combined data.")
+        else:
+            logging.warning("Gini and decile columns were not added correctly to the combined data.")
+
+        # Set output path and attempt to save the updated combined data with Gini and decile information
         gini_decile_output_path = os.path.join(data_paths["enigh"][2018]["interim"].rsplit("\\", 1)[0], "enigh_tidy_data_combined_with_gini_deciles.csv")
         save_tidy_data(combined_df, gini_decile_output_path)
-
+        logging.info(f"Gini and decile data saved to {gini_decile_output_path}")
+    else:
+        logging.error("Combined data is empty; skipping Gini and decile calculations.")
+    
     logging.info("ENIGH data transformation process completed for all years with Gini and decile data.")
