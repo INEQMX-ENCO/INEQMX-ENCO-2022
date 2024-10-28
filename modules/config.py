@@ -63,9 +63,14 @@ BASE_URL_SHP = "https://www.inegi.org.mx/contenidos/descargadenue/MGdescarga/MGN
 # Download URLs by dataset and year
 urls = {
     "enco": {
-        2018: [f"{BASE_URL_ENCO}/2018/conjunto_de_datos_enco_2018_{str(i).zfill(2)}_csv.zip" for i in range(1, 13)],
-        2020: [f"{BASE_URL_ENCO}/2020/conjunto_de_datos_enco_2020_{str(i).zfill(2)}_csv.zip" for i in range(1, 13)],
-        2022: [f"{BASE_URL_ENCO}/2022/conjunto_de_datos_enco_2022_{str(i).zfill(2)}_csv.zip" for i in range(1, 13)]
+        year: {
+            month: BASE_URL_ENCO.format(
+                year=year,
+                filename=years[year].get("exceptions", {}).get(month, years[year]["pattern"].format(month=month))
+            )
+            for month in [f"{i:02}" for i in range(1, 13)]  # Months 01 to 12
+            if years[year].get("exceptions", {}).get(month) is not None or "pattern" in years[year]
+        } for year in [2018, 2020, 2022]
     },
     "enigh": {
         2018: f"{BASE_URL_ENIGH}/2018/datosabiertos/conjunto_de_datos_enigh_2018_ns_csv.zip",
