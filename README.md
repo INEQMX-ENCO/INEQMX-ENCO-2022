@@ -1,3 +1,4 @@
+![MCD](https://mcd.unison.mx/wp-content/themes/awaken/img/logo_mcd.png)
 # Perception vs. Reality of Household Income in Mexico
 
 <a target="_blank" href="https://cookiecutter-data-science.drivendata.org/">
