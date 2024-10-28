@@ -112,42 +112,34 @@ def build_url(year, month, info):
 # Parallel downloads using ThreadPoolExecutor
 def download_data():
     # Clean directories for each dataset and year
-    clean_directory(data_paths['enco'][2022]['raw'], preserve_files=['.gitkeep'])
+    for year in years.keys():
+        enco_path = data_paths['enco'][year]['raw']
+        clean_directory(enco_path, preserve_files=['.gitkeep'])
+        os.makedirs(enco_path, exist_ok=True)
     clean_directory(data_paths['enigh'][2018]['raw'], preserve_files=['.gitkeep'])
     clean_directory(data_paths['enigh'][2020]['raw'], preserve_files=['.gitkeep'])
     clean_directory(data_paths['enigh'][2022]['raw'], preserve_files=['.gitkeep'])
     clean_directory(data_paths['censo']['raw'], preserve_files=['.gitkeep'])
     clean_directory(data_paths['shp']['raw'], preserve_files=['.gitkeep'])
 
-    # Create necessary directories
-    os.makedirs(data_paths['enco'][2022]['raw'], exist_ok=True)
-    os.makedirs(data_paths['enigh'][2018]['raw'], exist_ok=True)
-    os.makedirs(data_paths['enigh'][2020]['raw'], exist_ok=True)
-    os.makedirs(data_paths['enigh'][2022]['raw'], exist_ok=True)
-    os.makedirs(data_paths['censo']['raw'], exist_ok=True)
-    os.makedirs(data_paths['shp']['raw'], exist_ok=True)
-
     # Download ENCO datasets using the `years` dictionary
     for year, info in years.items():
         enco_path = data_paths['enco'][year]['raw']
-        os.makedirs(enco_path, exist_ok=True)
         
         for month in [str(i).zfill(2) for i in range(1, 13)]:
             url = build_url(year, month, info)
             if url:  # Skip months without a file
-                download_and_extract_zip(url, enco_path)
+                download_and_extract_zip(url, enco_path)          
 
     with ThreadPoolExecutor(max_workers=4) as executor:
         # Download CENSO datasets in parallel
         executor.map(lambda url: download_and_extract_zip(url, data_paths['censo']['raw']), urls['censo'])
-
         # Download SHP datasets in parallel
         executor.map(lambda url: download_and_extract_zip(url, data_paths['shp']['raw']), urls['shp'])
 
     # Download ENIGH datasets after ENCO downloads
-    download_and_extract_zip(urls['enigh'][2018], extract_path=data_paths['enigh'][2018]['raw'])
-    download_and_extract_zip(urls['enigh'][2020], extract_path=data_paths['enigh'][2020]['raw'])
-    download_and_extract_zip(urls['enigh'][2022], extract_path=data_paths['enigh'][2022]['raw'])
+    for year in [2018, 2020, 2022]:
+        download_and_extract_zip(urls['enigh'][year], extract_path=data_paths['enigh'][year]['raw'])
 
 
 # Function to list only files in a directory and capture their metadata
