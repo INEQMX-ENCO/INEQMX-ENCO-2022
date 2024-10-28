@@ -3,6 +3,7 @@ import os
 # Base paths
 BASE_RAW_DATA_PATH = os.path.abspath("data/raw")
 BASE_INTERIM_DATA_PATH = os.path.abspath("data/interim")
+BASE_PROCESSED_DATA_PATH = os.path.abspath("data/processed")
 
 # Paths for storing raw and interim data, organized by dataset and year
 data_paths = {
