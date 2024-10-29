@@ -218,24 +218,18 @@ if __name__ == "__main__":
         if validate_data(raw_data):
             # Transform data
             tidy_data = transform_censo_data(raw_data)
-            #tidy_data_ent= inter_data[inter_data['cvegeo'].str.len() == 2].copy()
-            #tidy_data_mun= inter_data[inter_data['cvegeo'].str.len() == 5].copy()
-            if tidy_data is not None:
-                save_tidy_data_censo(tidy_data, output_file_path)
-            #     # Create metadata
-                create_metadata(output_file_path, raw_file_path)
-            # if tidy_data_ent is not None:
+            tidy_data_ent= tidy_data[tidy_data['cvegeo'].str.len() == 2].copy()
+            tidy_data_mun= tidy_data[tidy_data['cvegeo'].str.len() == 5].copy()
+            if tidy_data_ent is not None:
             #     # Save tidy data
-            #     save_tidy_data_censo(tidy_data_ent, output_file_path_ent)
-
+                save_tidy_data_censo(tidy_data_ent, output_file_path_ent)
             #     # Create metadata
-            #     create_metadata(output_file_path_ent, raw_file_path)
+                create_metadata(output_file_path_ent, raw_file_path)
 
-            # if tidy_data_mun is not None:
+            if tidy_data_mun is not None:
             #     # Save tidy data
-            #     save_tidy_data_censo(tidy_data_mun, output_file_path_mun)
-
+                save_tidy_data_censo(tidy_data_mun, output_file_path_mun)
             #     # Create metadata
-            #     create_metadata(output_file_path_mun, raw_file_path)
+                create_metadata(output_file_path_mun, raw_file_path)
 
     logging.info("CENSO data transformation process completed.")
