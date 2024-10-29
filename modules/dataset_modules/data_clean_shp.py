@@ -5,6 +5,7 @@ import logging
 import geopandas as gpd
 from datetime import datetime
 from shapely.geometry import Polygon, MultiPolygon
+import fiona # used to file.to file
 
 # Add the project root directory to the Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
@@ -74,7 +75,7 @@ def transform_shp_data(data):
         tidy_data_shp = data[REQUIRED_COLUMNS].copy()  # Use .copy() to avoid SettingWithCopyWarning
 
         # Rename columns
-        tidy_data_shp.rename(columns={"CVEGEO": 'cvegeo', 'NOMGEO': 'nom_geo', 'geometry': 'geo'}, inplace=True)
+        tidy_data_shp.rename(columns={"CVEGEO": 'cvegeo', 'NOMGEO': 'nom_geo'}, inplace=True) # we keep as is 'geometry'
 
         logging.info(f"Transformed data shape: {tidy_data_shp.shape}")
         return tidy_data_shp
@@ -92,32 +93,53 @@ def validate_data(data):
 
         if data.shape[1] == 5:
             cond_cvegeo = (data['CVEGEO'].apply(lambda x: isinstance(x, str)) &
-                           (data['CVEGEO'] == data['CVE_ENT'] + data['CVE_MUN']))
+                           (data['CVEGEO'] == data['CVE_ENT'] + data['CVE_MUN'])).all()
         else:
             cond_cvegeo = (data['CVEGEO'].apply(lambda x: isinstance(x, str)) &
-                           (data['CVEGEO'] == data['CVE_ENT']))
+                           (data['CVEGEO'] == data['CVE_ENT'])).all()
 
+        # Condición type: los datos descargados deben ser del tipo geodataframe
+        cond_type = type(data) == gpd.GeoDataFrame
+        
         # Condición ent: debe ser str y su conversión a entero debe estar entre 1 y 32
         cond_ent = (data['CVE_ENT'].apply(lambda x: isinstance(x, str)) &
-                    data['CVE_ENT'].apply(lambda x: x.isdigit() and 1 <= int(x) <= 32))
+                    data['CVE_ENT'].apply(lambda x: x.isdigit() and 1 <= int(x) <= 32)).all()
 
         # Condición nom_geo: columna nom_geo debe ser str
-        cond_nom_geo = data['NOMGEO'].apply(lambda x: isinstance(x, str))
+        cond_nom_geo = data['NOMGEO'].apply(lambda x: isinstance(x, str)).all()
 
         # Condición geo: columna geo debe ser del tipo geométrico Polygon o MultiPolygon
-        cond_geo = data['geometry'].apply(lambda x: isinstance(x, (Polygon, MultiPolygon)))
+        cond_geo = data['geometry'].apply(lambda x: isinstance(x, (Polygon, MultiPolygon))).all()
 
         # Condición 5: Verificamos si hay valores NaN y en qué columnas están
-        cond_nan = data.columns[data.isnull().any()].tolist()
+        cond_nan = len(data.columns[data.isnull().any()].tolist())==0
+
+        # Log detailed information about the validation result
+        if not cond_type:
+           logging.error("Validation failed: file did not load as a geodataframe.")
+        if not cond_ent:
+            logging.error("Validation failed: 'CVE_ENT' column has invalid values.")
+        if not cond_nom_geo:
+            logging.error("Validation failed: 'NOMGEO' column has invalid values.")
+        if not cond_geo:
+            logging.error("Validation failed: 'geometry' column has invalid values.")
+        if not cond_nan:
+            logging.error("Validation failed: Missing columns with NaN values.")
 
         # Verificamos si todas las filas cumplen con todas las condiciones
-        cumple_todas_condiciones = (cond_cvegeo & cond_ent & cond_nom_geo & cond_geo).all() and len(cond_nan) == 0
-        
+        cumple_todas_condiciones = all([
+            cond_type,
+            cond_cvegeo, 
+            cond_ent, 
+            cond_nom_geo, 
+            cond_geo, 
+            cond_nan
+        ]) 
         if cumple_todas_condiciones:
-            logging.info("Validation passed.")
+            logging.info(f"Validation passed.")
             return True
         else:
-            logging.warning(f"Validation failed. Missing columns with NaN values: {cond_nan}")
+            logging.warning(f"Validation failed.")
             return False
     except Exception as e:
         logging.error(f"Error during validation: {e}")
@@ -127,7 +149,7 @@ def save_tidy_data_shp(data, output_path):
     """Save the transformed tidy data."""
     try:
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
-        data.to_csv(output_path, index=False)
+        data.to_file(output_path)
         logging.info(f"Saved tidy data to {output_path}")
     except Exception as e:
         logging.error(f"Error saving tidy data: {e}")
@@ -146,8 +168,8 @@ def create_metadata(output_path, raw_data_path):
         logging.error(f"Error creating metadata: {e}")
 
 if __name__ == "__main__":
-    output_file_path_ent = os.path.join(interim_data_path_shp, "shp_ent_tidy_data.csv")
-    output_file_path_mun = os.path.join(interim_data_path_shp, "shp_mun_tidy_data.csv")
+    output_file_path_ent = os.path.join(interim_data_path_shp, "shp_ent_tidy_data.shp")
+    output_file_path_mun = os.path.join(interim_data_path_shp, "shp_mun_tidy_data.shp")
     raw_path = data_paths['shp']['raw']
     
     # Load raw data
