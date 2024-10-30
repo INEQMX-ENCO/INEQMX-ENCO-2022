@@ -181,26 +181,23 @@ def save_tidy_data(data, output_path):
 
 def create_summary_csv(data, output_path):
     """Create a summary CSV file with Gini coefficients and cumulative statistics by state, municipality, and year."""
-    
-    # Group by entidad (state) for Gini by state and calculate metrics
-    summary_state = data.groupby(['entidad', 'year']).apply(
+    summary_state = data.groupby(['entidad', 'year'], as_index=False).apply(
         lambda x: pd.Series({
             'gini_entidad_year': calculate_gini(x['ing_cor'], weights=x['factor']),
             'total_income_state': (x['ing_cor'] * x['factor']).sum(),
             'avg_income_state': np.average(x['ing_cor'], weights=x['factor']),
             'total_households_state': x['Nhog'].sum()
         })
-    ).reset_index()
+    ).reset_index(drop=True)
 
-    # Group by entidad, municipio, and year for Gini by municipio and year
-    summary_municipio = data.groupby(['entidad', 'municipio', 'year']).apply(
+    summary_municipio = data.groupby(['entidad', 'municipio', 'year'], as_index=False).apply(
         lambda x: pd.Series({
             'gini_municipio_year': calculate_gini(x['ing_cor'], weights=x['factor']),
             'total_income_municipio': (x['ing_cor'] * x['factor']).sum(),
             'avg_income_municipio': np.average(x['ing_cor'], weights=x['factor']),
             'total_households_municipio': x['Nhog'].sum()
         })
-    ).reset_index()
+    ).reset_index(drop=True)
 
     # Merge the state and municipio summaries
     summary = pd.merge(summary_municipio, summary_state, on=['entidad', 'year'], how='left')

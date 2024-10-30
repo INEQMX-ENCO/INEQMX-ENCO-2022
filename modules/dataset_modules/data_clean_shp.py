@@ -5,7 +5,7 @@ import logging
 import geopandas as gpd
 from datetime import datetime
 from shapely.geometry import Polygon, MultiPolygon
-import fiona # used to file.to file
+#import fiona  used to file.to file
 
 # Add the project root directory to the Python path
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
