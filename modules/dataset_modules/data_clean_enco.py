@@ -13,7 +13,8 @@ sys.path.append(project_root)
 from modules.config import data_paths, years, LOGS_FOLDER
 
 # Ensure interim data path and logs directory exist
-interim_data_path_enco = data_paths["enco"][2022]["interim"]
+for year in [2018, 2020, 2022]:
+    interim_data_path_enco = data_paths["enco"][year]["interim"]
 os.makedirs(interim_data_path_enco, exist_ok=True)
 os.makedirs(LOGS_FOLDER, exist_ok=True)
 
@@ -45,38 +46,33 @@ def seleccionar_columnas(df, columnas_relevantes):
 def construir_ruta(anio, mes, tipo):
     base_folder = data_paths['enco'][anio]['raw']
     mes_str = str(mes).zfill(2)  # Zero-pad the month
-    pattern_info = years[anio]
-
-    # Determine file name based on pattern and exceptions
-    file_name = pattern_info['exceptions'].get(mes_str) if 'exceptions' in pattern_info and mes_str in pattern_info['exceptions'] else pattern_info['pattern'].format(month=mes_str)
-    if file_name is None:
-        return None
-
-    # Construct path variations for folders and subfolders
-    paths_to_try = []
     
     # 2018 file paths
     if anio == 2018:
-        if mes <= 6:  # For first half of 2018
-            paths_to_try.append(os.path.join(base_folder, f"{tipo}_enco0{mes}18", f"{file_name}.csv"))
-            paths_to_try.append(os.path.join(base_folder, f"{tipo}_enco0{mes}18", f"{file_name}.CSV"))
-        elif mes == 7:  # Special case for July
-            paths_to_try.append(os.path.join(base_folder, f"{tipo}_enco0718", f"{file_name}.csv"))
-            paths_to_try.append(os.path.join(base_folder, f"{tipo}_enco0718", f"{file_name}.CSV"))
-        else:  # August to December
-            paths_to_try.append(os.path.join(base_folder, f"conjunto_de_datos_{tipo}_enco_2018_{mes_str}", "conjunto_de_datos", f"{file_name}.csv"))
-            paths_to_try.append(os.path.join(base_folder, f"conjunto_de_datos_{tipo}_enco_2018_{mes_str}", "conjunto_de_datos", f"{file_name}.CSV"))
-    else:  # 2020 and 2022 paths
-        paths_to_try.append(os.path.join(base_folder, f"conjunto_de_datos_{tipo}_enco_{anio}_{mes_str}", "conjunto_de_datos", f"{file_name}.csv"))
-        paths_to_try.append(os.path.join(base_folder, f"conjunto_de_datos_{tipo}_enco_{anio}_{mes_str}", "conjunto_de_datos", f"{file_name}.CSV"))
+        if mes <= 6:
+            file_name = f'enco{tipo}_0{mes}18.csv'
+            folder_path = os.path.join(base_folder, f"{tipo}_enco0{mes}18", "conjunto_de_datos")
+        elif mes == 7:
+            file_name = f'conjunto_de_datos_enco{tipo}_0718.csv'
+            folder_path = os.path.join(base_folder, f"{tipo}_enco0718", "conjunto_de_datos")
+        else:
+            file_name = f'conjunto_de_datos_{tipo}_enco_2018_{mes_str}.csv'
+            folder_path = os.path.join(base_folder, f"conjunto_de_datos_{tipo}_enco_2018_{mes_str}", "conjunto_de_datos")
+    else:
+        file_name = f'conjunto_de_datos_{tipo}_enco_{anio}_{mes_str}.csv'
+        folder_path = os.path.join(base_folder, f"conjunto_de_datos_{tipo}_enco_{anio}_{mes_str}", "conjunto_de_datos")
 
-    # Iterate through possible paths and return the first that exists
-    for path in paths_to_try:
-        if os.path.exists(path):
-            return path
+    file_path = os.path.join(folder_path, file_name)
+    if not os.path.exists(file_path):
+        # Intenta con la extensión alternativa en mayúsculas
+        file_name = file_name.replace('.csv', '.CSV')
+        file_path = os.path.join(folder_path, file_name)
     
-    logging.warning(f"File not found at any path for: year {anio}, month {mes}, type {tipo}. Tried paths: {paths_to_try}")
-    return None
+    if not os.path.exists(file_path):
+        logging.warning(f"File not found for year {anio}, month {mes}, type {tipo}. Tried path: {file_path}")
+        return None
+
+    return file_path
 
 
 # Load data function
