@@ -10,12 +10,12 @@ project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../")
 sys.path.append(project_root)
 
 # Import configurations
-from modules.config import data_paths, years, LOGS_FOLDER
-
+from modules.config import data_paths, years, LOGS_FOLDER, BASE_PROCESSED_DATA_PATH
+processed_enco_path = os.path.join(BASE_PROCESSED_DATA_PATH, "enco")
 # Ensure interim data path and logs directory exist
-for year in [2018, 2020, 2022]:
-    interim_data_path_enco = data_paths["enco"][year]["interim"]
-os.makedirs(interim_data_path_enco, exist_ok=True)
+#for year in [2018, 2020, 2022]:
+#    interim_data_path_enco = data_paths["enco"][year]["interim"]
+#os.makedirs(interim_data_path_enco, exist_ok=True)
 os.makedirs(LOGS_FOLDER, exist_ok=True)
 
 # Setup logging configuration
@@ -33,6 +33,11 @@ viv_cols = columnas_comunes + viv_especificas
 cs_cols = columnas_comunes + cs_especificas
 cb_cols = columnas_comunes + cb_especificas
 valores_perdidos = [9999, 99999, 999999]
+
+# Create output directory for each year
+for year in years.keys():
+    interim_data_path_year = os.path.join(data_paths["enco"][year]["interim"], str(year))
+    os.makedirs(interim_data_path_year, exist_ok=True)
 
 # Function to select relevant columns after normalizing them
 def seleccionar_columnas(df, columnas_relevantes):
@@ -138,8 +143,10 @@ def analizar_calidad_datos(df):
 
 # Process and filter DataFrames
 def procesar_datos():
-    df_final = pd.DataFrame()
+    df_all_years = pd.DataFrame()  # To store combined data across all years
+    
     for anio in years.keys():
+        df_final = pd.DataFrame()  # To store data for each year
         cs_enco_filtrado = [seleccionar_columnas(cargar_datos(anio, i, 'cs'), cs_cols) for i in range(1, 13)]
         viv_enco_filtrado = [seleccionar_columnas(cargar_datos(anio, i, 'viv'), viv_cols) for i in range(1, 13)]
         cb_enco_filtrado = [seleccionar_columnas(cargar_datos(anio, i, 'cb'), cb_cols) for i in range(1, 13)]
@@ -150,18 +157,26 @@ def procesar_datos():
                 temp = pd.merge(temp, cb_df, on=columnas_comunes, how='inner')
                 df_final = pd.concat([df_final, temp], ignore_index=True)
 
-    validar_datos(df_final)
+        validar_datos(df_final)
+        df_final_limpio = analizar_calidad_datos(df_final)
 
-    # Clean data by replacing specific missing values with NaN
-    df_final_limpio = analizar_calidad_datos(df_final)
+        # Save cleaned data for each year
+        interim_output_path = os.path.join(data_paths["enco"][anio]["interim"], f"enco_interim_{anio}.csv")
+        df_final_limpio.to_csv(interim_output_path, index=False)
+        logging.info(f"Processed data for {anio} saved at {interim_output_path}")
 
-    # Save cleaned data
-    output_file_path = os.path.join(interim_data_path_enco, "enco_interim_tidy.csv")
-    df_final_limpio.to_csv(output_file_path, index=False)
-    logging.info(f"Processed data saved at {output_file_path}")
+        # Append to all years DataFrame
+        df_all_years = pd.concat([df_all_years, df_final_limpio], ignore_index=True)
 
-    # Generate metadata
-    create_metadata(output_file_path)
+    # Save combined data for all years
+    processed_enco_folder = os.path.join(project_root, "data", "processed", "enco")
+    os.makedirs(processed_enco_folder, exist_ok=True)
+    combined_output_path = os.path.join(processed_enco_folder, "enco_interim_tidy.csv")
+    df_all_years.to_csv(combined_output_path, index=False)
+    logging.info(f"Combined processed data for all years saved at {combined_output_path}")
+
+    # Generate metadata for combined file
+    create_metadata(combined_output_path)
 
 if __name__ == "__main__":
     procesar_datos()
