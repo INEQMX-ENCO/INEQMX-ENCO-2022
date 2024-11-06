@@ -16,6 +16,7 @@ from modules.config import data_paths, LOGS_FOLDER
 
 # Ensure interim data path and logs directory exist
 interim_data_path_shp = data_paths["shp"]["interim"]
+processed_data_path_shp = data_paths["shp"]["processed"]
 os.makedirs(interim_data_path_shp, exist_ok=True)
 os.makedirs(LOGS_FOLDER, exist_ok=True)
 
@@ -168,8 +169,8 @@ def create_metadata(output_path, raw_data_path):
         logging.error(f"Error creating metadata: {e}")
 
 if __name__ == "__main__":
-    output_file_path_ent = os.path.join(interim_data_path_shp, "shp_ent_tidy_data.shp")
-    output_file_path_mun = os.path.join(interim_data_path_shp, "shp_mun_tidy_data.shp")
+    output_file_path_ent = os.path.join(processed_data_path_shp, "shp_ent_tidy_data.shp")
+    output_file_path_mun = os.path.join(processed_data_path_shp, "shp_mun_tidy_data.shp")
     raw_path = data_paths['shp']['raw']
     
     # Load raw data

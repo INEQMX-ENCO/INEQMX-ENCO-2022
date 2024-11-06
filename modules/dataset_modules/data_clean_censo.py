@@ -13,6 +13,7 @@ from modules.config import data_paths, LOGS_FOLDER
 
 # Ensure interim data path and logs directory exist
 interim_data_path_censo = data_paths["censo"]["interim"]
+processed_data_path_censo = data_paths["censo"]["processed"]
 os.makedirs(interim_data_path_censo, exist_ok=True)
 os.makedirs(LOGS_FOLDER, exist_ok=True)
 
@@ -206,9 +207,9 @@ def create_metadata(output_path, raw_data_path):
 
 if __name__ == "__main__":
     raw_file_path = os.path.join(data_paths['censo']['raw'], "iter_00_cpv2020",'conjunto_de_datos')
-    output_file_path_ent = os.path.join(interim_data_path_censo, "censo_ent_tidy_data.csv")
-    output_file_path_mun = os.path.join(interim_data_path_censo, "censo_mun_tidy_data.csv")
-    output_file_path = os.path.join(interim_data_path_censo, "censo_tidy_data.csv")
+    output_file_path_ent = os.path.join(processed_data_path_censo, "censo_ent_tidy_data.csv")
+    output_file_path_mun = os.path.join(processed_data_path_censo, "censo_mun_tidy_data.csv")
+    output_file_path = os.path.join(processed_data_path_censo, "censo_tidy_data.csv")
 
     # Load raw data
     raw_data = load_raw_censo(raw_file_path)

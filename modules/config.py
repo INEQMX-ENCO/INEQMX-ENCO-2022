@@ -21,11 +21,14 @@ data_paths = {
     },
     "censo": {
         "raw": os.path.join(BASE_RAW_DATA_PATH, "censo"),
-        "interim": os.path.join(BASE_INTERIM_DATA_PATH, "censo")
+        "interim": os.path.join(BASE_INTERIM_DATA_PATH, "censo"),
+        "processed": os.path.join(BASE_PROCESSED_DATA_PATH, "censo")
+        
     },
     "shp": {
         "raw": os.path.join(BASE_RAW_DATA_PATH, "shp"),
-        "interim": os.path.join(BASE_INTERIM_DATA_PATH, "shp")
+        "interim": os.path.join(BASE_INTERIM_DATA_PATH, "shp"),
+        "processed": os.path.join(BASE_PROCESSED_DATA_PATH, "shp")
     }
 }
 
