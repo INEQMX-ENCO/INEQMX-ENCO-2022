@@ -12,10 +12,6 @@ sys.path.append(project_root)
 # Import configurations
 from modules.config import data_paths, years, LOGS_FOLDER, BASE_PROCESSED_DATA_PATH
 processed_enco_path = os.path.join(BASE_PROCESSED_DATA_PATH, "enco")
-# Ensure interim data path and logs directory exist
-#for year in [2018, 2020, 2022]:
-#    interim_data_path_enco = data_paths["enco"][year]["interim"]
-#os.makedirs(interim_data_path_enco, exist_ok=True)
 os.makedirs(LOGS_FOLDER, exist_ok=True)
 
 # Setup logging configuration
@@ -141,6 +137,13 @@ def analizar_calidad_datos(df):
     logging.info(porcentaje_perdidos[porcentaje_perdidos > 0])
     return df_limpio
 
+# Unify the date format in 'fch_def'
+def unificar_formato_fecha(df, columna_fecha):
+    # Try day/month/year format and then year-month-day
+    df[columna_fecha] = pd.to_datetime(df[columna_fecha], errors='coerce', dayfirst=True)
+    df[columna_fecha] = df[columna_fecha].fillna(pd.to_datetime(df[columna_fecha], errors='coerce', dayfirst=False))
+    return df
+
 # Process and filter DataFrames
 def procesar_datos():
     df_all_years = pd.DataFrame()  # To store combined data across all years
@@ -155,6 +158,10 @@ def procesar_datos():
             if not cs_df.empty and not viv_df.empty and not cb_df.empty:
                 temp = pd.merge(cs_df, viv_df, on=columnas_comunes, how='inner')
                 temp = pd.merge(temp, cb_df, on=columnas_comunes, how='inner')
+                
+                # Unify the date format
+                temp = unificar_formato_fecha(temp, 'fch_def')
+                
                 df_final = pd.concat([df_final, temp], ignore_index=True)
 
         validar_datos(df_final)
@@ -168,15 +175,28 @@ def procesar_datos():
         # Append to all years DataFrame
         df_all_years = pd.concat([df_all_years, df_final_limpio], ignore_index=True)
 
-    # Save combined data for all years
+    # Unify the date format 
+    df_all_years = unificar_formato_fecha(df_all_years, 'fch_def')
+    
+    # Extract the year to group
+    df_all_years['year'] = df_all_years['fch_def'].dt.year
+
+    # Save Combined Data
     processed_enco_folder = os.path.join(project_root, "data", "processed", "enco")
     os.makedirs(processed_enco_folder, exist_ok=True)
     combined_output_path = os.path.join(processed_enco_folder, "enco_interim_tidy.csv")
     df_all_years.to_csv(combined_output_path, index=False)
     logging.info(f"Combined processed data for all years saved at {combined_output_path}")
 
-    # Generate metadata for combined file
+    # Group by entity, municipality and year
+    df_grouped = df_all_years.groupby(['ent', 'mpio', 'year']).sum(numeric_only=True).reset_index()
+    grouped_output_path = os.path.join(processed_enco_folder, "enco_grouped.csv")
+    df_grouped.to_csv(grouped_output_path, index=False)
+    logging.info(f"Grouped data by state and year saved at {grouped_output_path}")
+
+    # Generate metadata
     create_metadata(combined_output_path)
+    create_metadata(grouped_output_path)
 
 if __name__ == "__main__":
     procesar_datos()
