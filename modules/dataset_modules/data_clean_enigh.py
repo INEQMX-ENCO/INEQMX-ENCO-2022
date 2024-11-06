@@ -236,7 +236,7 @@ if __name__ == "__main__":
     combined_df = add_gini_and_deciles(combined_df)
 
     # Save the combined data to the processed ENIGH path
-    final_output_file = os.path.join(processed_enigh_path, "enigh_interim_tidy.csv")
+    final_output_file = os.path.join(processed_enigh_path, "enigh_processed_tidy.csv")
     save_tidy_data(combined_df, final_output_file)
 
     # Generate and save the summary CSV
