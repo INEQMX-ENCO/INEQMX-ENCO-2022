@@ -69,7 +69,7 @@ create_environment:
 .PHONY: generate_visualizations
 generate_visualizations:
 	@echo ">>> Generating visualizations..."
-	@$(PYTHON_INTERPRETER) $(SCRIPTS_DIR)/generate_pygwalker_viz.py
+	@$(PYTHON_INTERPRETER) $(SCRIPTS_DIR)/generate_data_vis.py
 
 ## Build documentation with MkDocs
 .PHONY: build_docs
