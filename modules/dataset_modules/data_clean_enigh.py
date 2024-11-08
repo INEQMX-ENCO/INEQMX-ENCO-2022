@@ -26,7 +26,8 @@ logging.basicConfig(filename=log_filename, level=logging.INFO,
 REQUIRED_COLUMNS = ["folioviv", "foliohog", "ubica_geo", "ing_cor", "factor", "upm", "est_dis",
                     "ingtrab", "trabajo", "negocio", "otros_trab", "rentas", "utilidad", 
                     "arrenda", "transfer", "jubilacion", "becas", "donativos", "remesas", 
-                    "bene_gob", "transf_hog", "trans_inst", "estim_alqu", "otros_ing"]
+                    "bene_gob", "transf_hog", "trans_inst", "estim_alqu", "otros_ing", "tam_loc", "est_socio",
+                    "clase_hog", "sexo_jefe", "edad_jefe", "tot_integ", "hombres", "mujeres", "mayores", "menores"]
 
 # Specific file paths for each year based on the different directory structures
 file_paths_by_year = {
