@@ -23,10 +23,10 @@ logging.basicConfig(filename=log_filename, level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s', filemode='w')
 
 # Columns to select
-REQUIRED_COLUMNS = ["folioviv", "foliohog", "ubica_geo", "ing_cor", "factor", "upm", "est_dis",
-                    "ingtrab", "trabajo", "negocio", "otros_trab", "rentas", "utilidad", 
-                    "arrenda", "transfer", "jubilacion", "becas", "donativos", "remesas", 
-                    "bene_gob", "transf_hog", "trans_inst", "estim_alqu", "otros_ing", "tam_loc", "est_socio",
+REQUIRED_COLUMNS = ["folioviv", "ubica_geo", "folioviv", "foliohog", "ing_cor", "ingtrab", "trabajo", "negocio",
+                    "otros_trab", "rentas", "utilidad", "arrenda", "transfer", "jubilacion",
+                    "becas", "donativos", "remesas", "bene_gob", "transf_hog", "trans_inst",
+                    "estim_alqu", "otros_ing", "factor", "upm", "est_dis", "tam_loc", "est_socio",
                     "clase_hog", "sexo_jefe", "edad_jefe", "tot_integ", "hombres", "mujeres", "mayores", "menores"]
 
 # Specific file paths for each year based on the different directory structures
