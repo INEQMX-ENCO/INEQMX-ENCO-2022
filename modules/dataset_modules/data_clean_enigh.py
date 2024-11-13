@@ -131,45 +131,6 @@ def transform_enigh_data(data):
         logging.error(f"Error transforming data: {e}")
         return None
 
-def calculate_gini(array, weights=None):
-    """Calculate Gini coefficient with optional weighting."""
-    array = np.asarray(array)
-    if weights is None:
-        weights = np.ones(len(array))
-    weights = np.asarray(weights)
-    
-    sorted_indices = np.argsort(array)
-    sorted_array = array[sorted_indices]
-    sorted_weights = weights[sorted_indices]
-    
-    cum_weights = np.cumsum(sorted_weights)
-    cum_values = np.cumsum(sorted_array * sorted_weights)
-    
-    total_weights = cum_weights[-1]
-    total_values = cum_values[-1]
-    cum_weights = cum_weights / total_weights
-    cum_values = cum_values / total_values
-    
-    gini_index = 1 - 2 * np.sum(cum_values[:-1] * (cum_weights[1:] - cum_weights[:-1]))
-    return gini_index
-
-def add_gini_and_deciles(data):
-    """Add Gini coefficient and decile within each entidad, municipio, and year."""
-    
-    def process_group(group):
-        gini_coef = calculate_gini(group['ing_cor'], weights=group['factor'])
-        group['gini_year'] = gini_coef
-        
-        group = group.sort_values('ing_cor')
-        group['cum_factor'] = group['factor'].cumsum()
-        
-        total_factor = group['factor'].sum()
-        group['decile'] = pd.cut(group['cum_factor'], bins=np.linspace(0, total_factor, 11), labels=False, right=False)
-        return group
-
-    data = data.groupby(['entidad', 'municipio', 'year'], group_keys=False).apply(process_group)
-    data['decile'] = data['decile'].fillna(0).astype(int)
-    return data
 
 def save_tidy_data(data, output_path):
     """Save the transformed tidy data."""
@@ -180,38 +141,12 @@ def save_tidy_data(data, output_path):
     except Exception as e:
         logging.error(f"Error saving tidy data: {e}")
 
-def create_summary_csv(data, output_path):
-    """Create a summary CSV file with Gini coefficients and cumulative statistics by state, municipality, and year."""
-    summary_state = data.groupby(['entidad', 'year'], as_index=False).apply(
-        lambda x: pd.Series({
-            'gini_entidad_year': calculate_gini(x['ing_cor'], weights=x['factor']),
-            'total_income_state': (x['ing_cor'] * x['factor']).sum(),
-            'avg_income_state': np.average(x['ing_cor'], weights=x['factor']),
-            'total_households_state': x['Nhog'].sum()
-        })
-    ).reset_index(drop=True)
-
-    summary_municipio = data.groupby(['entidad', 'municipio', 'year'], as_index=False).apply(
-        lambda x: pd.Series({
-            'gini_municipio_year': calculate_gini(x['ing_cor'], weights=x['factor']),
-            'total_income_municipio': (x['ing_cor'] * x['factor']).sum(),
-            'avg_income_municipio': np.average(x['ing_cor'], weights=x['factor']),
-            'total_households_municipio': x['Nhog'].sum()
-        })
-    ).reset_index(drop=True)
-
-    # Merge the state and municipio summaries
-    summary = pd.merge(summary_municipio, summary_state, on=['entidad', 'year'], how='left')
-
-    # Save the summary DataFrame to a CSV file
-    summary.to_csv(output_path, index=False)
-    logging.info(f"Summary CSV saved to {output_path}")
-
 # Main script
 if __name__ == "__main__":
     combined_data = []
 
     for year in [2018, 2020, 2022]:
+        logging.info(f"Processing data for year {year}")
         raw_data_path = file_paths_by_year[year]
         interim_data_path = data_paths["enigh"][year]["interim"]
 
@@ -232,16 +167,10 @@ if __name__ == "__main__":
                     output_file = os.path.join(interim_data_path, f"enigh_tidy_{year}.csv")
                     save_tidy_data(tidy_data, output_file)
 
-    # Combine data and add Gini/decile information
-    combined_df = pd.concat(combined_data, ignore_index=True)
-    combined_df = add_gini_and_deciles(combined_df)
-
-    # Save the combined data to the processed ENIGH path
-    final_output_file = os.path.join(processed_enigh_path, "enigh_processed_tidy.csv")
-    save_tidy_data(combined_df, final_output_file)
-
-    # Generate and save the summary CSV
-    summary_output_file = os.path.join(processed_enigh_path, "enigh_summary_gini.csv")
-    create_summary_csv(combined_df, summary_output_file)
+    # Concatenate all years' data
+    if combined_data:
+        combined_df = pd.concat(combined_data, ignore_index=True)
+        final_output_file = os.path.join(processed_enigh_path, "enigh_processed_tidy.csv")
+        save_tidy_data(combined_df, final_output_file)
 
     logging.info("Data processing complete.")
