@@ -459,6 +459,11 @@ merged_data_nacional = merged_data_nacional.copy()
 for category, questions in categorias.items():
     merged_data_nacional[category] = merged_data_nacional[questions].mean(axis=1, skipna=True)
 
+# Agregar una columna con los ingresos promedio (promedio de todos los deciles)
+merged_data_nacional['ingreso_promedio_total'] = merged_data_nacional[
+    [f'decil_{i}' for i in range(1, 11)]
+].mean(axis=1)
+
 merged_data_nacional.to_csv('data/external/dashboard/resultados_nacionales_merged.csv', index=False)
 
 # Fusionar datos estatales
@@ -500,6 +505,11 @@ if 'year' in merged_data_estados.columns:
     if len(year_columns) > 1:
         # Eliminar la segunda columna duplicada
         merged_data_estados = merged_data_estados.loc[:, ~merged_data_estados.columns.duplicated()]
+
+# Agregar una columna con los ingresos promedio (promedio de todos los deciles)
+merged_data_estados['ingreso_promedio_total'] = merged_data_estados[
+    [f'decil_{i}' for i in range(1, 11)]
+].mean(axis=1)
 
 merged_data_estados.to_csv('data/external/dashboard/resultados_estatales_merged.csv', index=False)
 
@@ -639,5 +649,10 @@ if 'year' in merged_data_municipios.columns:
     if len(year_columns) > 1:
         # Eliminar la segunda columna duplicada
         merged_data_municipios = merged_data_municipios.loc[:, ~merged_data_municipios.columns.duplicated()]
+
+# Agregar una columna con los ingresos promedio (promedio de todos los deciles)
+merged_data_municipios['ingreso_promedio_total'] = merged_data_municipios[
+    [f'decil_{i}' for i in range(1, 11)]
+].mean(axis=1)
 
 merged_data_municipios.to_csv('data/external/dashboard/resultados_municipales_merged.csv', index=False)
