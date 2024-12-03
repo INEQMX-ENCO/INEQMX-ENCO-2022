@@ -8,6 +8,45 @@ from scipy.cluster.hierarchy import fcluster
 merged_municipios_df = pd.read_csv("data/external/dashboard/resultados_municipales_merged.csv")
 merged_municipios_df['estado'] = merged_municipios_df['estado'].str.strip().str.upper()
 
+# Crear un diccionario de mapeo de estados a regiones geográficas
+region_mapping = {
+    "AGUASCALIENTES": "Centro",
+    "BAJA CALIFORNIA": "Noroeste",
+    "BAJA CALIFORNIA SUR": "Noroeste",
+    "CAMPECHE": "Sureste",
+    "CHIAPAS": "Sureste",
+    "CHIHUAHUA": "Norte",
+    "COAHUILA DE ZARAGOZA": "Norte",
+    "COLIMA": "Centro-Occidente",
+    "DISTRITO FEDERAL": "Centro",
+    "DURANGO": "Norte",
+    "GUANAJUATO": "Centro",
+    "GUERRERO": "Sur",
+    "HIDALGO": "Centro",
+    "JALISCO": "Centro-Occidente",
+    "MEXICO": "Centro",
+    "MICHOACAN DE OCAMPO": "Centro-Occidente",
+    "MORELOS": "Centro",
+    "NAYARIT": "Centro-Occidente",
+    "NUEVO LEON": "Norte",
+    "OAXACA": "Sur",
+    "PUEBLA": "Centro",
+    "QUERETARO DE ARTEAGA": "Centro",
+    "QUINTANA ROO": "Sureste",
+    "SAN LUIS POTOSI": "Centro",
+    "SINALOA": "Noroeste",
+    "SONORA": "Noroeste",
+    "TABASCO": "Sureste",
+    "TAMAULIPAS": "Norte",
+    "TLAXCALA": "Centro",
+    "VERACRUZ DE IGNACIO DE LA LLAVE": "Sureste",
+    "YUCATAN": "Sureste",
+    "ZACATECAS": "Norte"
+}
+
+# Agregar la columna 'region' al DataFrame basado en el estado
+merged_municipios_df['Region'] = merged_municipios_df['estado'].map(region_mapping)
+
 print(merged_municipios_df.columns)
 
 # Define columns to use for clustering
@@ -54,7 +93,7 @@ numeric_columns = municipios_clustered.select_dtypes(include=['number']).columns
 # Calculate the summary statistics only for numeric columns
 cluster_summary_municipios = municipios_clustered.groupby('Cluster')[numeric_columns].mean()
 
-municipios_clustered.to_csv('Cluster_Estados.csv', index=True)
-cluster_summary_municipios.to_csv('Resumen_Cluster_Estados.csv', index=True)
+municipios_clustered.to_csv('data/external/dashboard/cluster/resultados_municipales_cluster.csv', index=True)
+cluster_summary_municipios.to_csv('data/external/dashboard/cluster/summary_municipales_cluster.csv', index=True)
 #print(cluster_summary_estados.head)
 #print(estados_clustered.head)
