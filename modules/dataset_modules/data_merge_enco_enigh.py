@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-'''# Carga del archivo CSV
+# Carga del archivo CSV
 df_enigh = pd.read_csv("data/processed/enigh/enigh_processed_tidy.csv")
 
 # Define el mapeo de códigos de estado a nombres de estado
@@ -361,7 +361,7 @@ resultados_municipio_porcentajes = resultados_municipio_porcentajes[['Año', 'Pr
 
 # Guardar el DataFrame en un archivo CSV
 path_resultado_enco_municipales = 'data/external/resultados_municipales_enco.csv'
-resultados_municipio_porcentajes.to_csv(path_resultado_enco_municipales, index=False)'''
+resultados_municipio_porcentajes.to_csv(path_resultado_enco_municipales, index=False)
 
 
 resultados_nacionales_enigh = pd.read_csv('data/external/resultados_nacionales_enigh.csv')
