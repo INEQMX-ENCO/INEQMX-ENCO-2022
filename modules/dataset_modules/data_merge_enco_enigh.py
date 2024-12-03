@@ -519,7 +519,7 @@ municipios = {
     "CAMPECHE": [("Campeche", 2)],
     "CHIAPAS": [("Chiapa de Corzo", 27), ("Tuxtla Gutiérrez", 101)],
     "CHIHUAHUA": [("Chihuahua", 19)],
-    "COAHUILA DE ZARAGOZA": [("Municipio 027", 27), ("Municipio 030", 30)],
+    "COAHUILA DE ZARAGOZA": [("Ramos Arizpe", 27), ("Saltillo", 30)],
     "COLIMA": [("Colima", 2), ("Villa de Álvarez", 10)],
     "DISTRITO FEDERAL": [
         ("Azcapotzalco", 2), ("Coyoacán", 3), ("Cuajimalpa de Morelos", 4),
